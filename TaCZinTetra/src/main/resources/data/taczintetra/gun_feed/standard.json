@@ -1,0 +1,7 @@
+{
+  "data_version": 1,
+  "id": "taczintetra:standard",
+  "feed_type": "magazine",
+  "resource_base_capacity": 12,
+  "reload_time_multiplier": 1.0
+}

@@ -1,0 +1,10 @@
+{
+  "replace": true,
+  "slots": ["taczintetra/magazine"],
+  "materialSlotCount": 1,
+  "displayType": "major",
+  "translation": {"durability": 1, "integrity": 1},
+  "outcomes": [{"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/magazine/standard", "moduleVariant": "standard/"}]
+}
+
+

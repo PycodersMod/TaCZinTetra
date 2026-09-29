@@ -1,0 +1,21 @@
+{
+  "replace": true,
+  "type": "tetra:basic_module",
+  "slots": ["taczintetra/special"],
+  "renderLayer": "higher",
+  "variants": [{
+    "materials": ["tetra:taczintetra/special_inlay"],
+    "key": "socket/",
+    "durability": 1,
+    "integrity": -1,
+    "magicCapacity": 0,
+    "extract": {
+      "durability": 1,
+      "integrity": -1,
+      "magicCapacity": 0,
+      "glyph": {"textureX": 80, "textureY": 112},
+      "availableTextures": ["default"],
+      "models": []
+    }
+  }]
+}

@@ -1,0 +1,23 @@
+{
+  "type": "taczintetra:configured_shaped",
+  "pattern": [
+    "PPP",
+    "PS ",
+    "L  "
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    },
+    "L": {
+      "tag": "minecraft:wooden_slabs"
+    }
+  },
+  "result": {
+    "item": "taczintetra:starter_pistol",
+    "count": 1
+  }
+}

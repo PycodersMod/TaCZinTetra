@@ -1,0 +1,12 @@
+{
+  "replace": true,
+  "slots": ["taczintetra/special"],
+  "materialSlotCount": 1,
+  "displayType": "minor",
+  "glyph": {"textureX": 80, "textureY": 112},
+  "outcomes": [{
+    "materials": ["tetra:taczintetra/special_inlay"],
+    "moduleKey": "taczintetra/special/socket",
+    "moduleVariant": "socket/"
+  }]
+}

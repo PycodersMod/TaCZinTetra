@@ -1,0 +1,10 @@
+{
+  "replace": true,
+  "slots": ["taczintetra/body"],
+  "materialSlotCount": 1,
+  "displayType": "major",
+  "translation": {"durability": 2, "integrity": 1},
+  "outcomes": [
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/body/rifle", "moduleVariant": "rifle/"}
+  ]
+}

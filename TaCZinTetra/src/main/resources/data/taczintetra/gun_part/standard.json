@@ -1,0 +1,9 @@
+{
+  "data_version": 1,
+  "id": "taczintetra:standard",
+  "part_items": {
+    "stock": "taczintetra:pistol_stock",
+    "optic": "taczintetra:pistol_optic",
+    "grip": "taczintetra:pistol_grip"
+  }
+}

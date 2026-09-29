@@ -1,0 +1,27 @@
+# TaCZinTetra common rules. Forge copies the active file to config/taczintetra.toml.
+[native_tacz]
+disable_items = true
+disable_recipes = true
+disable_workbenches = true
+
+[crafting_rules]
+only_semi_finished_parts = true
+only_repair_agents = true
+
+[jei]
+mode = "HIDE"
+
+[initial_gun]
+barrel = "9mm"
+body = "pistol"
+magazine = "standard"
+barrel_material = "wood"
+body_material = "wood"
+magazine_material = "wood"
+recipe = ["#minecraft:planks", "#minecraft:planks", "#minecraft:planks", "#minecraft:planks", "minecraft:stick", "", "#minecraft:wooden_slabs", "", ""]
+
+[client]
+force_dot_crosshair_for_modular_gun = true
+
+[debug]
+logging = false

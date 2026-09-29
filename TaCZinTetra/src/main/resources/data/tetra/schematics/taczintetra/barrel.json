@@ -1,0 +1,18 @@
+{
+  "replace": true,
+  "slots": ["taczintetra/barrel"],
+  "materialSlotCount": 1,
+  "displayType": "major",
+  "translation": {"durability": 1, "integrity": 1},
+  "outcomes": [
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/9mm", "moduleVariant": "9mm/"},
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/45acp", "moduleVariant": "45acp/"},
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/556", "moduleVariant": "556/"},
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/762", "moduleVariant": "762/"},
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/338", "moduleVariant": "338/"},
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/12g", "moduleVariant": "12g/"},
+    {"materials": ["tetra:taczintetra/wood", "tetra:taczintetra/stone", "tetra:taczintetra/iron", "tetra:taczintetra/gold", "tetra:taczintetra/netherite"], "moduleKey": "taczintetra/barrel/40mm", "moduleVariant": "40mm/"}
+  ]
+}
+
+

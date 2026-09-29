@@ -1,0 +1,25 @@
+package com.pycoder.taczintetra.logic;
+
+/** Transaction-like reload result; callers apply it only after animation completion. */
+public final class ReloadCompletionPolicy {
+    private ReloadCompletionPolicy() {
+    }
+
+    public static Result commit(boolean completed, int resourceAmount, int loadedAmmo,
+                                int paidBatches) {
+        if (!completed) {
+            return new Result(Math.max(0, resourceAmount), Math.max(0, loadedAmmo), 0);
+        }
+        int batches = Math.max(0, paidBatches);
+        int remainingResources = saturateNonNegative((long) Math.max(0, resourceAmount) - batches);
+        int settledAmmo = saturateNonNegative((long) Math.max(0, loadedAmmo) + batches);
+        return new Result(remainingResources, settledAmmo, batches);
+    }
+
+    private static int saturateNonNegative(long value) {
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0L, value));
+    }
+
+    public record Result(int resourceAmount, int loadedAmmo, int paidBatches) {
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "key": "special_inlay",
+  "category": "taczintetra",
+  "primary": 1,
+  "secondary": 1,
+  "tertiary": 1,
+  "durability": 1,
+  "integrityCost": 1,
+  "integrityGain": 1,
+  "magicCapacity": 0,
+  "toolLevel": "minecraft:wood",
+  "toolEfficiency": 1,
+  "tints": {"glyph": "b0b0b0", "texture": "b0b0b0"},
+  "textures": ["default"],
+  "material": {"items": ["taczintetra:special_inlay"]}
+}

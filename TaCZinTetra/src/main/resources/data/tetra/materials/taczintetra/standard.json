@@ -1,0 +1,31 @@
+{
+  "key": "standard",
+  "category": "taczintetra",
+  "primary": 3,
+  "secondary": 2,
+  "tertiary": 1,
+  "durability": 120,
+  "integrityCost": 1,
+  "integrityGain": 2,
+  "magicCapacity": 0,
+  "toolLevel": "minecraft:iron",
+  "toolEfficiency": 4,
+  "tints": {
+    "glyph": "ffffff",
+    "texture": "dddddd"
+  },
+  "textures": [
+    "crude",
+    "default"
+  ],
+  "material": {
+    "items": [
+      "taczintetra:pistol_body",
+      "taczintetra:pistol_barrel",
+      "taczintetra:pistol_magazine",
+      "taczintetra:pistol_stock",
+      "taczintetra:pistol_optic",
+      "taczintetra:pistol_grip"
+    ]
+  }
+}

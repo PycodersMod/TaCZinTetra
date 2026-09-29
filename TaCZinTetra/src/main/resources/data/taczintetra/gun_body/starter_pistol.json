@@ -1,0 +1,11 @@
+{
+  "data_version": 1,
+  "id": "taczintetra:starter_pistol",
+  "weapon_class": "pistol",
+  "fire_modes": ["semi"],
+  "shots_per_trigger": 1,
+  "loaded_capacity_multiplier": 1.0,
+  "rounds_per_minute": 300,
+  "dual_wield": true,
+  "heat": "taczintetra:standard"
+}

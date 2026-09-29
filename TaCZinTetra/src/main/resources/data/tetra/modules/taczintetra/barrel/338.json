@@ -1,0 +1,4 @@
+{"replace":true,"slots":["taczintetra/barrel"],"type":"tetra:basic_major_module","variants":[{"materials":["tetra:taczintetra/wood","tetra:taczintetra/stone","tetra:taczintetra/iron","tetra:taczintetra/gold","tetra:taczintetra/netherite"],"key":"338/","durability":120,"integrity":1,"magicCapacity":8,"aspects":{"breakable":2,"vanishable":2},"extract":{"durability":0.5,"integrity":0.5,"magicCapacity":8,"glyph":{"textureX":0,"textureY":0},"availableTextures":["default"],"models":[]}}]}
+
+
+

@@ -1,0 +1,9 @@
+{
+  "name": "taczintetra.gun.modular_gun.name",
+  "display": "tacz:modular_gun_display",
+  "data": "taczintetra:modular_gun_data",
+  "tooltip": "taczintetra.gun.modular_gun.desc",
+  "type": "pistol",
+  "item_type": "modern_kinetic",
+  "sort": 100
+}

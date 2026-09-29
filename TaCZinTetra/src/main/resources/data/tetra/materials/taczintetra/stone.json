@@ -1,0 +1,1 @@
+{"key":"stone","category":"taczintetra","primary":2,"secondary":1,"tertiary":1,"durability":100,"integrityCost":1,"integrityGain":1,"magicCapacity":0,"toolLevel":"minecraft:stone","toolEfficiency":3,"tints":{"glyph":"888888","texture":"999999"},"textures":["default"],"material":{"items":["taczintetra:stone_body","taczintetra:stone_barrel","taczintetra:stone_magazine"]}}

@@ -1,0 +1,13 @@
+{
+  "replace": true,
+  "slots": [ "taczintetra/optic" ],
+  "type": "tetra:basic_major_module",
+  "variants": [
+    {
+      "materials": [ "taczintetra/" ],
+      "key": "starter/",
+      "durability": 120,
+      "extract": { "durability": 0.5, "integrity": 0.5, "magicCapacity": 0, "glyph": { "textureX": 0, "textureY": 0 }, "availableTextures": [ "default" ], "models": [] }
+    }
+  ]
+}

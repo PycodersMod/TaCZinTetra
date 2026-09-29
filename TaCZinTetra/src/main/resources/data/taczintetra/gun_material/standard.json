@@ -1,0 +1,9 @@
+{
+  "data_version": 1,
+  "id": "taczintetra:standard",
+  "physical_part_items": ["taczintetra:pistol_body", "taczintetra:pistol_barrel", "taczintetra:pistol_magazine"],
+  "resource_capacity_multiplier": 1.0,
+  "thermal_conductivity": 1.0,
+  "repair_agent": "taczintetra:repair_agent",
+  "stat_modifiers": {}
+}

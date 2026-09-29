@@ -1,0 +1,8 @@
+{
+  "replace": true,
+  "slots": ["taczintetra/grip"],
+  "materialSlotCount": 1,
+  "displayType": "minor",
+  "translation": {"durability": 1},
+  "outcomes": [{"materials": ["taczintetra/"], "moduleKey": "taczintetra/grip", "moduleVariant": "starter/"}]
+}

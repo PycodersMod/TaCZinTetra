@@ -1,0 +1,1 @@
+{"key":"wood","category":"taczintetra","primary":1,"secondary":1,"tertiary":1,"durability":80,"integrityCost":1,"integrityGain":1,"magicCapacity":0,"toolLevel":"minecraft:wood","toolEfficiency":2,"tints":{"glyph":"8b5a2b","texture":"a06b38"},"textures":["default"],"material":{"items":["taczintetra:wood_body","taczintetra:wood_barrel","taczintetra:wood_magazine"]}}

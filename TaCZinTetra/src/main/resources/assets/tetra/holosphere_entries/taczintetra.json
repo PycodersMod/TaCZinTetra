@@ -1,0 +1,9 @@
+{
+  "item": "taczintetra:starter_pistol",
+  "icon": {
+    "textureLocation": "taczintetra:textures/item/blank.png",
+    "textureX": 0,
+    "textureY": 0
+  },
+  "position": 8
+}

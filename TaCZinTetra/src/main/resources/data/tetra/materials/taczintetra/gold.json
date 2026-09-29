@@ -1,0 +1,1 @@
+{"key":"gold","category":"taczintetra","primary":4,"secondary":2,"tertiary":1,"durability":110,"integrityCost":1,"integrityGain":2,"magicCapacity":8,"toolLevel":"minecraft:iron","toolEfficiency":5,"tints":{"glyph":"ffe36e","texture":"d9a51d"},"textures":["default"],"material":{"items":["taczintetra:gold_body","taczintetra:gold_barrel","taczintetra:gold_magazine"]}}

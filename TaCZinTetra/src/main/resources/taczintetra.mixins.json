@@ -1,0 +1,29 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.pycoder.taczintetra.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "taczintetra.refmap.json",
+  "mixins": [
+    "LivingEntityShootMixin",
+    "LivingEntityReloadMixin",
+    "LivingEntityBoltMixin",
+    "LivingEntityFireSelectMixin",
+    "LivingEntityMeleeMixin",
+    "EntityKineticBulletMixin",
+    "ModernKineticGunScriptAPIMixin",
+    "AbstractContainerMenuMixin",
+    "RecipeManagerMixin",
+    "ExplosionOutcomeMixin",
+    "WorkbenchTileMixin",
+    "SchematicRegistryMixin"
+  ],
+  "client": [
+    "ThirdPersonOffhandRenderMixin",
+    "ThirdPersonHumanoidOffhandProbeMixin",
+    "RenderCrosshairMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
