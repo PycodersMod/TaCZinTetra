@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LanDelayProxyContractTest {
     @Test
     void delayRelayReadsAheadIntoABoundedQueueInsteadOfSleepingTheReader() throws Exception {
-        String source = Files.readString(Path.of("../tools/lan-delay-proxy.ps1"), StandardCharsets.UTF_8);
+        String source = Files.readString(Path.of("../../tools/lan-delay-proxy.ps1"), StandardCharsets.UTF_8);
         assertTrue(source.contains("Channel.CreateBounded"));
         assertTrue(source.contains("ReadAllAsync"));
         assertTrue(source.contains("queue.Writer.WriteAsync"));
@@ -22,3 +22,4 @@ class LanDelayProxyContractTest {
         assertTrue(source.contains("requires PowerShell 7+"));
     }
 }
+

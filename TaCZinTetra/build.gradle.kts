@@ -1,5 +1,7 @@
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.compile.JavaCompile
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 
 plugins {
     java
@@ -22,6 +24,18 @@ val modDescription = prop("mod_description")
 val modLicense = prop("mod_license")
 
 val refMapRemappingFile = file("build/createSrgToMcp/output.srg")
+val titRunDir = file(
+    providers.gradleProperty("pycodersRuntimeDir")
+        .orElse("../../runtime/legacy-import/TaCZinTetra/run")
+        .get()
+)
+val titLegacyModsDir = file("../../runtime/legacy-import/TaCZinTetra/run/mods")
+fun decodeArgs(name: String): List<String> = providers.gradleProperty(name).orNull?.takeIf { it.isNotEmpty() }?.split('.')?.map { if (it == "_") "" else String(Base64.getDecoder().decode(it), StandardCharsets.UTF_8) } ?: emptyList()
+val pycodersGameArgs = decodeArgs("pycodersGameArgsB64")
+val pycodersJavaArgs = decodeArgs("pycodersJavaArgsB64")
+val pycodersUsername = providers.gradleProperty("titUsername").orNull
+    ?.takeIf { it.isNotBlank() }
+    ?: providers.gradleProperty("pycodersUsername").orElse("Dev").get()
 
 group = modGroupId
 version = modVersion
@@ -42,7 +56,7 @@ repositories {
     maven("https://maven.minecraftforge.net")
     maven("https://maven.blamejared.com")
     flatDir {
-        dirs("run/mods")
+        dirs(titRunDir.resolve("mods"), titLegacyModsDir)
     }
 }
 
@@ -70,7 +84,9 @@ minecraft {
 
     runs {
         create("client") {
-              workingDirectory(file(providers.gradleProperty("titGameDir").orElse("run").get()))
+            workingDirectory(titRunDir)
+            pycodersJavaArgs.forEach { jvmArg(it) }
+            pycodersGameArgs.forEach { args(it) }
             arg("-mixin.config=taczintetra.mixins.json")
             providers.gradleProperty("titClientArgs").orNull
                 ?.takeIf { it.isNotBlank() }
@@ -78,9 +94,7 @@ minecraft {
             providers.gradleProperty("titQuickPlayWorld").orNull
                 ?.takeIf { it.isNotBlank() }
                 ?.let { args("--quickPlaySingleplayer", it.trim()) }
-            providers.gradleProperty("titUsername").orNull
-                ?.takeIf { it.isNotBlank() }
-                ?.let { args("--username", it.trim()) }
+            args("--username", pycodersUsername)
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
             property("mixin.env.remapRefMap", "true")
@@ -105,7 +119,9 @@ minecraft {
         }
 
         create("server") {
-            workingDirectory(file("run"))
+            workingDirectory(titRunDir)
+            pycodersJavaArgs.forEach { jvmArg(it) }
+            pycodersGameArgs.forEach { args(it) }
             arg("nogui")
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
@@ -119,7 +135,7 @@ minecraft {
         }
 
         create("data") {
-            workingDirectory(file("run"))
+            workingDirectory(titRunDir)
             property("mixin.env.remapRefMap", "true")
             property("mixin.env.refMapRemappingFile", refMapRemappingFile.absolutePath)
             args(
@@ -134,7 +150,7 @@ minecraft {
 
 val prepareDevMods = tasks.register<Copy>("prepareDevMods") {
     from(configurations.runtimeClasspath)
-    into(layout.projectDirectory.dir("run/mods"))
+    into(titRunDir.resolve("mods"))
     include("*mutil*1.20.1-6.3.0_mapped_official_1.20.1.jar")
     include("*tetra*1.20.1-6.17.0_mapped_official_1.20.1.jar")
     include("*tacz*1.20.1-1.1.8-hotfix_mapped_official_1.20.1.jar")
@@ -190,3 +206,4 @@ tasks.jar {
         attributes["MixinConfigs"] = "taczintetra.mixins.json"
     }
 }
+
