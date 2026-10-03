@@ -24,12 +24,20 @@ val modDescription = prop("mod_description")
 val modLicense = prop("mod_license")
 
 val refMapRemappingFile = file("build/createSrgToMcp/output.srg")
-val titRunDir = file(
-    providers.gradleProperty("pycodersRuntimeDir")
-        .orElse("../../runtime/legacy-import/TaCZinTetra/run")
-        .get()
-)
-val titLegacyModsDir = file("../../runtime/legacy-import/TaCZinTetra/run/mods")
+val configuredRunDir = providers.gradleProperty("pycodersRuntimeDir").orNull?.let { file(it).canonicalFile }
+val configuredRuntimeRoot = providers.gradleProperty("pycodersRuntimeRoot").orNull
+    ?: providers.environmentVariable("MMTL_WORKSPACE_RUNTIME_ROOT").orNull
+val configuredRuntimeRunDir = configuredRuntimeRoot?.let {
+    File(it, "legacy-import/${rootProject.name}/run").canonicalFile
+}
+val discoveredRuntimeRunDir = generateSequence(project.projectDir.canonicalFile) { it.parentFile }
+    .map { File(it, "runtime/legacy-import/${rootProject.name}/run").canonicalFile }
+    .firstOrNull { it.isDirectory }
+val titRunDir = configuredRunDir
+    ?: configuredRuntimeRunDir
+    ?: discoveredRuntimeRunDir
+    ?: file("run").canonicalFile
+val titLegacyModsDir = titRunDir.resolve("mods")
 fun decodeArgs(name: String): List<String> = providers.gradleProperty(name).orNull?.takeIf { it.isNotEmpty() }?.split('.')?.map { if (it == "_") "" else String(Base64.getDecoder().decode(it), StandardCharsets.UTF_8) } ?: emptyList()
 val pycodersGameArgs = decodeArgs("pycodersGameArgsB64")
 val pycodersJavaArgs = decodeArgs("pycodersJavaArgsB64")
@@ -77,6 +85,31 @@ dependencies {
     compileOnly("mezz.jei:jei-1.20.1-forge-api:15.20.0.106")
     // Development-only mapped runtime; JEI remains an optional integration in the published mod.
     runtimeOnly(fg.deobf("mezz.jei:jei-1.20.1-forge:15.20.0.106"))
+}
+
+tasks.register("verifyPycodersRuntimeDirectory") {
+    doLast {
+        val configuredRunDir = providers.gradleProperty("pycodersRuntimeDir").orNull?.let { file(it).canonicalFile }
+        val configuredRoot = providers.gradleProperty("pycodersRuntimeRoot").orNull
+            ?: providers.environmentVariable("MMTL_WORKSPACE_RUNTIME_ROOT").orNull
+        val configuredRootRunDir = configuredRoot?.let { File(it, "legacy-import/${rootProject.name}/run").canonicalFile }
+        val discoveredRunDir = generateSequence(project.projectDir.canonicalFile) { it.parentFile }
+            .map { File(it, "runtime/legacy-import/${rootProject.name}/run").canonicalFile }
+            .firstOrNull { it.isDirectory }
+        val expectedRunDir = configuredRunDir ?: configuredRootRunDir ?: discoveredRunDir
+        if (expectedRunDir != null) {
+            check(titRunDir.canonicalFile == expectedRunDir) {
+                "The runtime directory must honor explicit configuration or discover the nearest workspace runtime directory."
+            }
+        }
+        check(titLegacyModsDir.canonicalFile == File(titRunDir, "mods").canonicalFile) {
+            "Legacy mod dependencies must resolve under the selected runtime directory."
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("verifyPycodersRuntimeDirectory")
 }
 
 minecraft {
