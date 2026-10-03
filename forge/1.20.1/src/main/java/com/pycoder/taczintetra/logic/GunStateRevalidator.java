@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.logic;
 import java.util.List;
 import java.util.Objects;
 
-/** Normalizes persisted per-stack state after reloads and module changes. */
+/** 在重载或模块变更后规范化已持久化的单个物品栈状态。 */
 public final class GunStateRevalidator {
     private GunStateRevalidator() {
     }

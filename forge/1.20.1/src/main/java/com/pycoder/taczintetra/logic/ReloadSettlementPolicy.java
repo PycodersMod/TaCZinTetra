@@ -1,8 +1,8 @@
 package com.pycoder.taczintetra.logic;
 
 /**
- * Commits a reload only after the caller confirms animation completion.
- * Inventory, ItemStack and network mutation remain outside this pure policy.
+ * 仅在调用方确认动画完成后提交换弹。
+ * 物品栏、ItemStack 和网络状态修改均留在此纯策略之外。
  */
 public final class ReloadSettlementPolicy {
     private ReloadSettlementPolicy() {

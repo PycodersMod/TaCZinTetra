@@ -10,7 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-/** Server-side one-way resource insertion; it never exposes a gun-to-inventory operation. */
+/** 服务端单向资源插入；不提供从枪械向背包返还资源的操作。 */
 public final class ResourceInsertionService {
     public static final String ITEM_CHANNEL = "taczintetra:item";
 
@@ -29,8 +29,8 @@ public final class ResourceInsertionService {
                     resource.shrink(accepted);
                     return accepted;
                 }
-                // A supporting addon owns this resource even when it currently
-                // rejects insertion; never fork its inventory into core NBT.
+                // 即使辅助模组当前暂时拒绝插入，
+                // 该资源仍归辅助模组所有；不得将其库存复制到核心 NBT。
                 return 0;
             }
         }

@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.config;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 
-/** Runtime rules stored in config/taczintetra.toml. */
+/** 保存在 config/taczintetra.toml 中的运行时规则。 */
 public final class TaczInTetraForgeConfig {
     public static final ForgeConfigSpec SPEC;
     public static final ForgeConfigSpec.BooleanValue DISABLE_NATIVE_ITEMS;

@@ -19,7 +19,7 @@ import java.util.WeakHashMap;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 
-/** Client intent for cycling the off-hand mode in dual-pistol mode. */
+/** 双枪模式下切换副手模式的客户端意图。 */
 public record FireModeIntentMessage(boolean offHand, int stackIdentity, int sequence) {
     private static final Map<ServerPlayer, Integer> LAST_SEQUENCE = new WeakHashMap<>();
     private static final Logger LOGGER = LogUtils.getLogger();

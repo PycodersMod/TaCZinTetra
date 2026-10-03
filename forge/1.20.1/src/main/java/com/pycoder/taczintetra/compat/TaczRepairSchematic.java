@@ -4,7 +4,7 @@ import com.pycoder.taczintetra.item.ModularGunItem;
 import net.minecraft.world.item.ItemStack;
 import se.mickelus.tetra.module.schematic.RepairSchematic;
 
-/** Bridges Tetra's repair action to the project's configured repair agents. */
+/** 将 Tetra 修理操作桥接到项目配置的修理材料。 */
 public final class TaczRepairSchematic extends RepairSchematic {
     private final ModularGunItem gun;
 

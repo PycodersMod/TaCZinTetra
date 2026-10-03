@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Computes N independent shots times M pellets with an explicit safety cap. */
+/** 计算 N 次独立射击对应的 M 个弹丸，并应用明确的安全上限。 */
 public final class ShotCountCalculator {
     private ShotCountCalculator() {
     }

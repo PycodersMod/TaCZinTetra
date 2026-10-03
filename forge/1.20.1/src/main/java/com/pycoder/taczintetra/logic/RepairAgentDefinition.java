@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import com.google.gson.JsonObject;
 
-/** Repair agent identity and one-shot unit cost. */
+/** 修复代理身份及单次消耗量。 */
 public record RepairAgentDefinition(String item, int unitCost) {
     public static RepairAgentDefinition from(JsonObject object) {
         String item = "";

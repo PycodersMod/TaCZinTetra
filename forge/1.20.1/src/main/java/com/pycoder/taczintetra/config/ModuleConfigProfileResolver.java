@@ -6,12 +6,12 @@ import com.pycoder.taczintetra.logic.ResourceCapacityCalculator;
 import java.util.Map;
 import java.util.Collection;
 
-/** Converts the three selected Tetra variants into the pure runtime profile. */
+/** 将选中的三个 Tetra 变体转换为纯运行时档案。 */
 public final class ModuleConfigProfileResolver {
     private ModuleConfigProfileResolver() {
     }
 
-    /** Validates the material selected for each major model before profile creation. */
+    /** 创建档案前，分别验证每个主要模型所选的材料。 */
     public static boolean isSelectionValid(ModuleConfig config, String bodyId, String barrelId,
                                            String magazineId, String bodyMaterialId,
                                            String barrelMaterialId, String magazineMaterialId) {
@@ -55,9 +55,9 @@ public final class ModuleConfigProfileResolver {
     }
 
     /**
-     * Resolves the three major modules with independent material selections.
-     * The five-argument legacy overload deliberately remains available for
-     * old configs whose single material applied to the complete gun.
+     * 解析三个主要模块，并分别选择材料。
+     * 有意保留五参数旧版重载，以继续支持
+     * 将单一材料应用于整把枪械的旧配置。
      */
     public static GunProfileResolver.ResolvedGunProfile resolve(ModuleConfig config,
                                                                   String bodyId, String barrelId, String magazineId,
@@ -165,7 +165,7 @@ public final class ModuleConfigProfileResolver {
                 grip ? "grip" : null, optic ? "optic" : null);
     }
 
-    /** Applies the configured entry for each installed attachment model. */
+    /** 为每个已安装的附件模型应用对应配置。 */
     public static GunProfileResolver.ResolvedGunProfile applyAttachments(ModuleConfig config,
                                                                            GunProfileResolver.ResolvedGunProfile base,
                                                                            String stockId, String gripId,
@@ -183,7 +183,7 @@ public final class ModuleConfigProfileResolver {
                 new GunProfileResolver.VisualProfile(Math.max(0.01, zoom)));
     }
 
-    /** Applies only configured, capacity-valid special-inlay profile modifiers. */
+    /** 仅应用已配置且容量有效的特殊嵌片档案修饰项。 */
     public static GunProfileResolver.ResolvedGunProfile applySpecialInlays(
             ModuleConfig config, GunProfileResolver.ResolvedGunProfile base,
             Collection<String> requestedIds) {

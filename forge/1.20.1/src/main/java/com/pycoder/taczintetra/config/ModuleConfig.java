@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Immutable user-editable catalog for Tetra modules and their balance values. */
+/** 用户可编辑且不可变的 Tetra 模块与平衡数值目录。 */
 public record ModuleConfig(int schemaVersion, List<Material> materials, List<Body> bodies,
                            List<Barrel> barrels, List<Magazine> magazines,
                            List<Attachment> attachments, List<AmmoRecipeDefinition> ammoRecipes,

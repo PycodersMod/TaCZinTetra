@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.compat;
 
 import net.minecraftforge.fml.ModList;
 
-/** Centralized dependency presence checks; feature adapters must guard optional paths here. */
+/** 集中检查依赖是否存在；功能适配器必须在此防护可选路径。 */
 public final class ModCompat {
     private ModCompat() {
     }

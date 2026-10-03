@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Shared rounding and lower-bound rules for data-driven numeric attributes. */
+/** 数据驱动数值属性共用的舍入规则与下限规则。 */
 public final class DefinitionValueSanitizer {
     private DefinitionValueSanitizer() { }
 

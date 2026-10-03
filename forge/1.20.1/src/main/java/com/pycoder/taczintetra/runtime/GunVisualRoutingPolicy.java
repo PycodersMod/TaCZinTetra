@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.runtime;
 
 import net.minecraft.world.InteractionHand;
 
-/** Pure routing rules shared by future first/third-person visual adapters. */
+/** 供后续第一/第三人称视觉适配器共用的纯路由规则。 */
 public final class GunVisualRoutingPolicy {
     private GunVisualRoutingPolicy() {
     }

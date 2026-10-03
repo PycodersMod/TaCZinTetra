@@ -8,7 +8,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Advances heat independently for each held modular gun on the server. */
+/** 服务端分别推进每把手持模组枪械的热量状态。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class GunHeatTickHandler {
     private GunHeatTickHandler() { }

@@ -17,16 +17,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.slf4j.Logger;
 
-/** Re-enters TaCZ's model path for the renderer's skipped third-person left hand. */
+/** 为渲染器跳过的第三人称左手重新进入 TaCZ 模型渲染流程。 */
 @Mixin(GunItemRendererWrapper.class)
 public abstract class ThirdPersonOffhandRenderMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static boolean loggedRender;
 
     /**
-     * TaCZ is deobfuscated in userdev but ships its renderer with the
-     * obfuscated Minecraft method name in a production jar. Keep both names
-     * here so the client mixin remains valid in both launch modes.
+     * TaCZ 在 userdev 环境中已反混淆，但发布包中的渲染器使用
+     * Minecraft 混淆方法名。这里同时保留两种名称，
+     * 使客户端 mixin 在两种启动模式下都有效。
      */
     @Inject(method = {"renderByItem", "m_108829_"}, at = @At("HEAD"), cancellable = true,
             require = 0, remap = false)

@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.network;
 
 import com.pycoder.taczintetra.config.ModuleConfig;
 
-/** Stable-enough session digest used to reject silent client/server config drift. */
+/** 足够稳定的会话摘要，用于拒绝未提示的客户端/服务端配置差异。 */
 public final class ConfigDigest {
     private ConfigDigest() { }
 

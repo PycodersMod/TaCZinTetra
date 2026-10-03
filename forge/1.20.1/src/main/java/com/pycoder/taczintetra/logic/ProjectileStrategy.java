@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Resolves barrel pellet multiplication with an explicit safety limit. */
+/** 使用明确的安全上限解析枪管弹丸倍率。 */
 @FunctionalInterface
 public interface ProjectileStrategy {
     ProjectileStrategy DEFAULT = (shots, barrel, limit) -> barrel == null

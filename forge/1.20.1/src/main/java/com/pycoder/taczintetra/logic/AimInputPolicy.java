@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Rejects malformed client aim values before they reach TaCZ projectile code. */
+/** 在客户端瞄准值进入 TaCZ 弹丸代码前拒绝格式错误的值。 */
 public final class AimInputPolicy {
     private AimInputPolicy() {
     }

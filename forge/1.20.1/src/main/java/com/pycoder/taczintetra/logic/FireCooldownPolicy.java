@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Pure server-side fire-rate gate used by the modular-gun bridge. */
+/** 供模组枪械桥接使用的纯服务端射速门禁。 */
 public final class FireCooldownPolicy {
     private static final long NANOS_PER_MINUTE = 60_000_000_000L;
 

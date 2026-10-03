@@ -10,7 +10,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Shows the durable module and runtime NBT needed to inspect a modular gun in-game. */
+/** 显示游戏内检查模组枪械所需的持久化模块数据和运行时 NBT。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID, value = Dist.CLIENT)
 public final class ModularGunTooltipHandler {
     private static final String[] MODULE_KEYS = {

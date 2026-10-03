@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Overflow-safe normalization for TaCZ dummy-ammo NBT state. */
+/** 对 TaCZ 虚拟弹药 NBT 状态进行防溢出的规范化。 */
 public final class AmmoStatePolicy {
     private AmmoStatePolicy() {
     }

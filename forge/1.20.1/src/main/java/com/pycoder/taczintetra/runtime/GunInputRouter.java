@@ -1,10 +1,10 @@
 package com.pycoder.taczintetra.runtime;
 
-/** Pure input routing policy; actual key bindings are supplied by the client adapter. */
+/** 纯输入路由策略；实际按键绑定由客户端适配器提供。 */
 public final class GunInputRouter {
     private GunInputRouter() { }
 
-    /** An off-hand modular gun may fire alone, unless the main-hand gun occupies both hands. */
+    /** 副手模组枪械可以单独射击，除非主手枪械占用双手。 */
     public static boolean offhandShootAllowed(boolean mainGun, boolean offhandGun,
                                                boolean mainGunTwoHanded) {
         return offhandGun && !mainGunTwoHanded;

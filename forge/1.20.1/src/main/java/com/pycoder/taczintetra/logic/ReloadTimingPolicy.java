@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Single-batch and fill reloads share the same animation duration. */
+/** 单批换弹与装满式换弹共用相同的动画时长。 */
 public final class ReloadTimingPolicy {
     private ReloadTimingPolicy() {
     }

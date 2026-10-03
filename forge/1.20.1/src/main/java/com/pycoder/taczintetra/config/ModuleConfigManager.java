@@ -17,7 +17,7 @@ import java.nio.file.StandardOpenOption;
 
 import org.slf4j.Logger;
 
-/** Loads the editable JSON catalog and creates it from the packaged defaults. */
+/** 加载可编辑 JSON 目录；文件缺失时根据随包默认值创建。 */
 public final class ModuleConfigManager {
     private static final String RELATIVE_PATH = "taczintetra.json";
     private static final String LEGACY_RELATIVE_PATH = "taczintetra/modules.json";

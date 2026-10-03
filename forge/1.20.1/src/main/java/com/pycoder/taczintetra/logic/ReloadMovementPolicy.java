@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Reload movement rule: single batch uses normal speed, fill uses sneak speed. */
+/** 装填移动规则：单批装填使用正常速度，装满弹匣时使用潜行速度。 */
 public final class ReloadMovementPolicy {
     private ReloadMovementPolicy() {
     }

@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Capacity rules independent from inventory and network adapters. */
+/** 独立于物品栏与网络适配器的容量规则。 */
 public final class ResourceCapacityCalculator {
     private ResourceCapacityCalculator() {
     }

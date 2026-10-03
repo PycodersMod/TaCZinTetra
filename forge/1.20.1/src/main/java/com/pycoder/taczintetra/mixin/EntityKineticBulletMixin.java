@@ -29,7 +29,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Emits the addon hook only for TaCZ bullets configured with native explosion behavior. */
+/** 仅对配置为原生爆炸行为的 TaCZ 子弹触发附属模组钩子。 */
 @Mixin(value = EntityKineticBullet.class, remap = false)
 public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
     @Unique
@@ -116,9 +116,9 @@ public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
     }
 
     /**
-     * Treats the configured projectile damage as the per-hit value. TaCZ's
-     * native return value already contains its distance damage curve; using it
-     * as a second multiplier makes the JSON damage depend on the template gun.
+     * 将配置的弹丸伤害视为每次命中的伤害值。TaCZ
+     * 原生返回值已包含距离伤害曲线；若再将其作为乘数，
+     * JSON 伤害就会错误地依赖模板枪械。
      */
     @Inject(method = "getDamage(Lnet/minecraft/world/phys/Vec3;)F", at = @At("RETURN"),
             cancellable = true, remap = false)

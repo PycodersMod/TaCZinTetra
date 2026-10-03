@@ -5,7 +5,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
 
-/** Extensible runtime hook for addon behavior without adding addon hard dependencies. */
+/** 可扩展的运行时钩子，使附属模组能够接入行为而无需建立硬依赖。 */
 @Cancelable
 public final class GunRuntimeEvent extends Event {
     public enum Type {

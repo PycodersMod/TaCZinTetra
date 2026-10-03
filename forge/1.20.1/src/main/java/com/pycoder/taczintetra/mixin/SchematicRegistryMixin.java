@@ -14,7 +14,7 @@ import se.mickelus.tetra.module.schematic.UpgradeSchematic;
 
 import java.util.Map;
 
-/** Keeps the dynamic repair schematic present after Tetra rebuilds its map. */
+/** Tetra 重建映射表后，确保动态修理蓝图仍然存在。 */
 @Mixin(value = SchematicRegistry.class, remap = false)
 public abstract class SchematicRegistryMixin {
     private static final ResourceLocation REPAIR_ID =

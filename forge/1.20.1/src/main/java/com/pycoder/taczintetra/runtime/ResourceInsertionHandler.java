@@ -8,7 +8,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Handles only server-side right-click insertion and keeps the remainder in the source stack. */
+/** 仅处理服务端右键插入，并将剩余物品留在来源物品栈中。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class ResourceInsertionHandler {
     private ResourceInsertionHandler() {

@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import org.slf4j.Logger;
 
-/** Delegates TaCZ's strict AbstractGunItem lifecycle to a Tetra-backed stack. */
+/** 将 TaCZ 严格的 AbstractGunItem 生命周期委托给由 Tetra 支持的物品栈。 */
 public final class ModularGunLifecycleAdapter {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String RELOAD_STARTED_AT = "taczintetra_reload_started_at";
@@ -58,7 +58,7 @@ public final class ModularGunLifecycleAdapter {
     private ModularGunLifecycleAdapter() {
     }
 
-    /** Uses TaCZ's registered item instance; constructing an Item after registry freeze crashes the server. */
+    /** 使用 TaCZ 已注册的物品实例；注册表冻结后再构造 Item 会导致服务端崩溃。 */
     private static ModernKineticGunItem delegate() {
         return ModItems.MODERN_KINETIC_GUN.get();
     }
@@ -67,7 +67,7 @@ public final class ModularGunLifecycleAdapter {
         return stack != null && !stack.isEmpty() && stack.getItem() instanceof ModularGunItem;
     }
 
-    /** Mirrors TaCZ's server timestamp tolerance for every modular-gun entry point. */
+    /** 为每个模组枪械入口复现 TaCZ 服务端的时间戳容差规则。 */
     public static boolean acceptsNetworkTimestamp(ShooterDataHolder data, LivingEntity shooter,
                                                   long timestamp) {
         if (data == null || shooter == null) return false;
@@ -114,8 +114,8 @@ public final class ModularGunLifecycleAdapter {
             if (gunIndex == null || gunIndex.getGunData() == null
                     || !FireModePolicy.isAllowed(gun.getFireMode(stack),
                     gunIndex.getGunData().getFireModeSet())) return false;
-            // Keep the adapter safe even when a future TaCZ entry point calls
-            // it without passing through LivingEntityShootMixin first.
+            // 即使未来 TaCZ 入口绕过 LivingEntityShootMixin 直接调用适配器，
+            // 适配器也必须保持安全。
             if (gun.isBroken(stack) || gun.isOverheatLocked(stack)) return false;
             InteractionHand hand = ReloadRuntimeCoordinator.handForStack(shooter, stack);
             if (hand != null && (ReloadRuntimeCoordinator.handReloading(shooter, hand)
@@ -243,23 +243,23 @@ public final class ModularGunLifecycleAdapter {
         if (isModular(stack)) {
             ModularGunItem gun = (ModularGunItem) stack.getItem();
             boolean tactical = gun.getCurrentAmmoCount(stack) > 0 || gun.hasBulletInBarrel(stack);
-            // LivingEntityReload normally seeds these fields before calling
-            // AbstractGunItem.startReload. The mixin intercepts that method
-            // for Tetra stacks, so the adapter must preserve the same native
-            // timing state instead of allowing the next tick to settle early.
+            // LivingEntityReload 通常会在调用
+            // AbstractGunItem.startReload 前初始化这些字段。Mixin 会拦截该方法
+            // 以处理 Tetra 物品栈，因此适配器必须保留相同的原生
+            // 计时状态，避免在下一个 tick 过早结算。
             data.reloadStateType = tactical
                     ? ReloadState.StateType.TACTICAL_RELOAD_FEEDING
                     : ReloadState.StateType.EMPTY_RELOAD_FEEDING;
             data.reloadTimestamp = System.currentTimeMillis();
-            // TiT owns the modular magazine. Keep TaCZ's legacy shadow field
-            // aligned before its reload state machine reads the stack.
+            // 模组弹匣由 TiT 管理。在 TaCZ 状态机读取物品栈之前，
+            // 先同步 TaCZ 的旧版影子字段。
             syncNativeAmmo(gun, stack);
         }
         boolean accepted = delegate().startReload(data, stack, shooter);
         if (!accepted && isModular(stack)) {
-            // The generated gunpack intentionally has no Lua reload hook. Some
-            // TaCZ builds nevertheless return false before their native state
-            // machine is entered; seed that native state without settling ammo.
+            // 生成的枪械包刻意不包含 Lua 换弹钩子。某些 TaCZ 构建仍会在
+            // 进入原生状态机之前返回 false；此处应初始化
+            // 原生状态，但不要结算弹药。
             ModularGunItem gun = (ModularGunItem) stack.getItem();
             boolean tactical = gun.getCurrentAmmoCount(stack) > 0 || gun.hasBulletInBarrel(stack);
             data.reloadStateType = tactical
@@ -313,10 +313,10 @@ public final class ModularGunLifecycleAdapter {
             long duration = nativeReloadDurationMillis(stack, activeReloadType);
             if (elapsed < duration) {
                 ReloadState guarded = new ReloadState();
-                // TaCZ's delegate can transiently reset its holder to
-                // NOT_RELOADING before its Lua-free modular reload duration.
-                // Restore the state and timestamp, otherwise the next tick
-                // sees elapsed=-1 and settles the reload immediately.
+                // TaCZ 委托逻辑可能会暂时将 holder 重置为
+                // NOT_RELOADING，早于无 Lua 模组换弹时长结束的时间。
+                // 必须恢复状态和时间戳，否则下一个 tick
+                // 会看到 elapsed=-1 并立即结算换弹。
                 data.reloadStateType = activeReloadType;
                 data.reloadTimestamp = reloadStartedAt;
                 guarded.setStateType(activeReloadType);
@@ -327,9 +327,9 @@ public final class ModularGunLifecycleAdapter {
             }
         }
         if (pending && state != null && state.getStateType().name().equals("NOT_RELOADING")) {
-            // TaCZ's default finisher writes its native magazine before this
-            // adapter gets control. Restore the TiT value so one authority
-            // computes the batch and resource debit exactly once.
+            // TaCZ 默认结束器会在控制权交给本适配器之前写入原生弹匣。
+            // 恢复 TiT 管理的值，确保只有一个权威来源
+            // 计算弹药批次并且只扣除一次资源。
             gun.setCurrentAmmoCount(stack, ammoBeforeNative);
             boolean settled = ReloadRuntimeSettlementService.settleIfComplete(gun, stack, shooter);
             syncNativeAmmo(gun, stack);
@@ -376,7 +376,7 @@ public final class ModularGunLifecycleAdapter {
         restoreDefaultGunSupplier(data, shooter);
     }
 
-    /** Restore the shared TaCZ holder after a hand-specific reload lifecycle. */
+    /** 手部专属换弹流程结束后，恢复共享的 TaCZ holder。 */
     private static void restoreDefaultGunSupplier(ShooterDataHolder data, LivingEntity shooter) {
         data.currentGunItem = shooter::getMainHandItem;
     }
@@ -387,7 +387,7 @@ public final class ModularGunLifecycleAdapter {
             try {
                 return ReloadState.StateType.valueOf(value);
             } catch (IllegalArgumentException ignored) {
-                // Fall back to TaCZ's holder state for malformed old stacks.
+                // 旧物品栈格式异常时，回退使用 TaCZ holder 状态。
             }
         }
         return fallback;
@@ -409,12 +409,12 @@ public final class ModularGunLifecycleAdapter {
         }
     }
 
-    /** TaCZ's registered delegate reads this vanilla TaCZ key, while the public item owns its namespaced key. */
+    /** TaCZ 已注册委托读取此原版 TaCZ 键，公开物品则使用自己的命名空间键。 */
     private static void syncNativeAmmo(ModularGunItem gun, ItemStack stack) {
         stack.getOrCreateTag().putInt("AmmoCount", Math.max(0, gun.getCurrentAmmoCount(stack)));
     }
 
-    /** Invokes TaCZ's projectile implementation directly; the item wrapper's optional script path skips shootOnce for Tetra stacks. */
+    /** 直接调用 TaCZ 弹丸实现；物品包装器的可选脚本路径会跳过 Tetra 物品栈的 shootOnce。 */
     private static void shootThroughNativeScriptApi(ShooterDataHolder data, ItemStack stack,
                                                      Supplier<Float> pitch, Supplier<Float> yaw,
                                                      LivingEntity shooter, boolean consumeNativeAmmo) {
@@ -427,7 +427,7 @@ public final class ModularGunLifecycleAdapter {
         api.shootOnce(consumeNativeAmmo);
     }
 
-    /** Uses TaCZ's public projectile implementation while keeping module ammo authoritative. */
+    /** 使用 TaCZ 的公开弹丸实现，同时以模块弹药数据为准。 */
     private static int spawnNativeProjectile(ShooterDataHolder data, ModularGunItem gun,
                                                ItemStack stack, Supplier<Float> pitch,
                                                Supplier<Float> yaw, LivingEntity shooter,
@@ -463,11 +463,11 @@ public final class ModularGunLifecycleAdapter {
             var bullet = new EntityKineticBullet(shooter.level(), shooter, stack,
                     ammoId, gun.getGunId(stack), gun.getGunDisplayId(stack),
                     false, gunData, bulletData);
-            // TaCZ 1.1.8-hotfix only assigns the trajectory inside its Lua
-            // spread callback. The modular gun intentionally has no script,
-            // so the callback is a no-op and leaves a zero-delta projectile.
-            // Use TaCZ's public rotation API for the script-less fallback;
-            // scripted native guns retain the original spread path.
+            // TaCZ 1.1.8-hotfix 仅在 Lua 散布回调中设置轨迹。
+            // 模组枪械刻意不提供脚本，因此该回调不执行操作，
+            // 导致弹丸方向变化量为零。
+            // 对无脚本的回退路径使用 TaCZ 公共旋转 API；
+            // 原生脚本枪械仍保留原有的散布流程。
             if (!hasScript(gunIndex)) {
                 bullet.shootFromRotation(shooter, pitch.get(), yaw.get(), 0.0f,
                         velocity, spread);

@@ -10,7 +10,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Rebuilds TaCZ's local attachment cache once after a modular gun enters the hand. */
+/** 模组枪械拿在手中后，重新构建一次 TaCZ 本地附件缓存。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID, value = Dist.CLIENT)
 public final class GunCacheTickHandler {
     private GunCacheTickHandler() {

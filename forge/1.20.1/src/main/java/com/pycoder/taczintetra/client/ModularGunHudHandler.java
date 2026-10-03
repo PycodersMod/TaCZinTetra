@@ -18,7 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 
-/** Client HUD for the active modular gun and, when present, its off-hand partner. */
+/** 显示当前主手模组枪械及可选副手枪械的客户端 HUD。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID, value = Dist.CLIENT)
 public final class ModularGunHudHandler {
     private static final int RIGHT_MARGIN = 8;
@@ -51,7 +51,7 @@ public final class ModularGunHudHandler {
             }
         }
 
-        // Main hand is authoritative: an off-hand gun alone never causes a HUD.
+        // 主手为权威来源：仅有副手枪械时绝不显示 HUD。
         ItemStack offhand = minecraft.player.getOffhandItem();
         ModularGunItem offhandGun = offhand.getItem() instanceof ModularGunItem value ? value : null;
         int y = event.getWindow().getGuiScaledHeight() - 38;

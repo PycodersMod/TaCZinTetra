@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-/** Converts configured finished-part resource IDs to local registry paths. */
+/** 将已配置的成品部件资源 ID 转换为本地注册表路径。 */
 public final class ConfiguredPartIds {
     private static final String LOCAL_NAMESPACE = "taczintetra";
 

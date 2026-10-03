@@ -4,7 +4,7 @@ import com.tacz.guns.api.item.gun.FireMode;
 
 import java.util.List;
 
-/** Keeps the runtime fire mode constrained by the native TaCZ gun definition. */
+/** 将运行时开火模式限制在 TaCZ 原生枪械定义允许的范围内。 */
 public final class FireModePolicy {
     private FireModePolicy() { }
 

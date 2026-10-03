@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** Material data used by capacity, heat and repair stages. */
+/** 容量、热量与修理阶段使用的材料数据。 */
 public record GunMaterialDefinition(List<String> physicalPartItems, double capacityMultiplier,
                                     double thermalConductivity, String repairAgent,
                                     Map<String, Double> statModifiers) {

@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.Set;
 
-/** Central policy for native TaCZ content; kept independent from JEI. */
+/** 原生 TaCZ 内容的集中策略；不依赖 JEI。 */
 public final class NativeTaczRestrictionService {
     private static final Set<String> NATIVE_ITEM_IDS = Set.of(
             "modern_kinetic_gun",
@@ -32,8 +32,8 @@ public final class NativeTaczRestrictionService {
     }
 
     /**
-     * Recipe policy is intentionally broader than item policy: a native TaCZ recipe can
-     * have a non-TaCZ recipe id, while TaCZ's own recipe namespace remains fully disabled.
+     * 配方策略刻意比物品策略更宽泛：原生 TaCZ 配方可能使用
+     * 非 TaCZ 配方 ID，而 TaCZ 自身命名空间中的配方仍会全部禁用。
      */
     public static boolean shouldBlockNativeRecipe(ResourceLocation recipeId, ResourceLocation resultId) {
         if (!TaczInTetraForgeConfig.DISABLE_NATIVE_RECIPES.get()) return false;

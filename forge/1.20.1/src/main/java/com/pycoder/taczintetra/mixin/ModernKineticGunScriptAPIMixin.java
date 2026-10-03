@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
-/** Supplies TaCZ's native implementation delegate when the stack is Tetra-backed. */
+/** 物品栈由 Tetra 驱动时，提供 TaCZ 原生实现的委托。 */
 @Mixin(value = ModernKineticGunScriptAPI.class, remap = false)
 public abstract class ModernKineticGunScriptAPIMixin {
     private static final Logger LOGGER = LogUtils.getLogger();

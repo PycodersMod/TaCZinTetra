@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Transaction-like reload result; callers apply it only after animation completion. */
+/** 类事务式换弹结果；调用者仅在动画完成后应用。 */
 public final class ReloadCompletionPolicy {
     private ReloadCompletionPolicy() {
     }

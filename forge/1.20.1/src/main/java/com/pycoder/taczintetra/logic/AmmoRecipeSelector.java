@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import java.util.Map;
 
-/** Selects a cost recipe by the barrel projectile and feed type. */
+/** 根据枪管弹丸类型与供弹方式选择消耗配方。 */
 public final class AmmoRecipeSelector {
     private AmmoRecipeSelector() {
     }

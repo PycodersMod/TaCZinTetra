@@ -1,4 +1,4 @@
-# TaCZinTetra common rules. Forge copies the active file to config/taczintetra.toml.
+# TaCZinTetra 通用规则。Forge 会将当前生效文件复制到 config/taczintetra.toml。
 [native_tacz]
 disable_items = true
 disable_recipes = true

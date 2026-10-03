@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.runtime;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
-/** Owns both hand contexts and coordinates reload ownership. */
+/** 管理双手上下文并协调装填归属。 */
 public final class DualHandRuntimeState {
     private final PerHandWeaponContext mainHand = new PerHandWeaponContext(InteractionHand.MAIN_HAND);
     private final PerHandWeaponContext offHand = new PerHandWeaponContext(InteractionHand.OFF_HAND);

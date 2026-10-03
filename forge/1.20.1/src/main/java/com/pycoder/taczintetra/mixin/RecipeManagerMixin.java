@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 
-/** Removes native TaCZ recipes from the server recipe manager before indexing. */
+/** 在索引前从服务端配方管理器移除 TaCZ 原生配方。 */
 @Mixin(net.minecraft.world.item.crafting.RecipeManager.class)
 public abstract class RecipeManagerMixin {
     private static final Logger LOGGER = LogUtils.getLogger();

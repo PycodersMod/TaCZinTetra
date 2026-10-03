@@ -9,7 +9,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards default survival acquisition for repair agents and special inlays. */
+/** 确保生存模式下可按默认方式获取修理材料和特殊嵌片。 */
 class RepairAndInlayRecipeContractTest {
     private static final Path ROOT = Path.of("src/main/resources/data/taczintetra/recipes");
 

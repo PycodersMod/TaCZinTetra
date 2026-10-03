@@ -5,7 +5,7 @@ import com.pycoder.taczintetra.item.GunModuleSlots;
 import net.minecraft.world.item.ItemStack;
 import se.mickelus.tetra.items.modular.IModularItem;
 
-/** Resolves the configured reload recipe without embedding ammo values in runtime code. */
+/** 解析配置的换弹配方，不将弹药数值写入运行时代码。 */
 public final class ConfiguredAmmoRecipeResolver {
     private ConfiguredAmmoRecipeResolver() {
     }
@@ -37,7 +37,7 @@ public final class ConfiguredAmmoRecipeResolver {
         return select(config, projectile, feedType);
     }
 
-    /** Returns the configured TaCZ ammo id for the selected barrel, if valid. */
+    /** 返回所选枪管对应的有效 TaCZ 弹药 ID。 */
     public static String projectileId(ModuleConfig config,
                                       TetraItemStackProfileResolver.SelectedModules modules) {
         if (config == null || modules == null || modules.barrel() == null) return null;

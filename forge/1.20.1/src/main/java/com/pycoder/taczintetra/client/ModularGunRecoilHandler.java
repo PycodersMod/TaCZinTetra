@@ -11,7 +11,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
-/** Applies the configured per-stack pitch recoil without changing TaCZ's shared gun data. */
+/** 按物品栈配置施加俯仰后坐力，不修改 TaCZ 共享枪械数据。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID, value = Dist.CLIENT)
 public final class ModularGunRecoilHandler {
     private ModularGunRecoilHandler() {
@@ -24,9 +24,9 @@ public final class ModularGunRecoilHandler {
                 || !(event.getGunItemStack().getItem() instanceof ModularGunItem gun)) {
             return;
         }
-        // TaCZ already owns the off-hand visual animation. Do not apply its
-        // recoil to the player's camera, otherwise dual-pistol fire overwrites
-        // the main-hand camera recoil channel.
+        // 副手视觉动画已由 TaCZ 控制。不要将其
+        // 后坐力施加到玩家视角，否则双手持枪射击会覆盖
+        // 主手的视角后坐力通道。
         if (player.getOffhandItem() == event.getGunItemStack()) return;
         var profile = TetraItemStackProfileResolver.tryResolve(gun, event.getGunItemStack(),
                 GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);

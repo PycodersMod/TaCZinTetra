@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import java.util.Arrays;
 
-/** Immutable static-profile cache key; high-frequency heat is intentionally excluded. */
+/** 不可变的静态档案缓存键；刻意排除高频变化的热量数据。 */
 public record GunProfileCacheKey(String[] moduleIds, String[] materialIds,
                                  int honingLevel, String[] improvementIds,
                                  int dataVersion) {

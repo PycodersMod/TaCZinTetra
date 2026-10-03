@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Makes modular guns use TaCZ's normal dot texture instead of a line/ruler texture. */
+/** 让模块化枪械使用 TaCZ 的普通圆点准星纹理，而非线条/标尺纹理。 */
 @Mixin(value = RenderCrosshairEvent.class, remap = false)
 public abstract class RenderCrosshairMixin {
     @Redirect(method = "renderCrosshair", remap = false, at = @At(value = "INVOKE", target = "Lcom/tacz/guns/client/renderer/crosshair/CrosshairType;getTextureLocation(Lcom/tacz/guns/client/renderer/crosshair/CrosshairType;)Lnet/minecraft/resources/ResourceLocation;", remap = false))

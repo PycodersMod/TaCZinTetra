@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.runtime;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
-/** Per-hand mutable runtime state; no state is shared between main and off hand. */
+/** 每只手各自拥有的可变运行时状态；主手与副手之间不共享状态。 */
 public final class PerHandWeaponContext {
     private final InteractionHand hand;
     private int stackIdentity = -1;

@@ -5,7 +5,7 @@ import com.pycoder.taczintetra.config.ModuleConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 
-/** Checks Tetra workbench materials against the user-editable semi-finished catalog. */
+/** 根据用户可编辑的半成品目录检查 Tetra 工作台材料。 */
 public final class SemiFinishedPartPolicy {
     private SemiFinishedPartPolicy() {
     }
@@ -32,7 +32,7 @@ public final class SemiFinishedPartPolicy {
                 .anyMatch(id::equals);
     }
 
-    /** Keeps the three configured main-part item identities bound to their Tetra slot. */
+    /** 将三个已配置的主部件物品身份绑定到各自的 Tetra 槽位。 */
     public static boolean matchesSlot(String itemId, String slot) {
         if (itemId == null || slot == null || slot.isBlank()) return true;
         String normalizedSlot = slot.replace('\\', '/');

@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Lazy Newton cooling model used by the future per-stack heat adapter. */
+/** 供逐物品栈热量适配器使用的惰性牛顿冷却模型。 */
 public final class HeatModel {
     private HeatModel() {
     }

@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import com.pycoder.taczintetra.config.ModuleConfig;
 
-/** Defines the enchantments allowed on a modular gun through Tetra. */
+/** 定义可通过 Tetra 应用于模组枪械的附魔。 */
 public final class EnchantmentPolicy {
     private EnchantmentPolicy() {
     }

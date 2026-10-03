@@ -9,7 +9,7 @@ import se.mickelus.tetra.module.ItemModule;
 
 import java.util.Set;
 
-/** Reads the selected Tetra module slots without putting balance values in item code. */
+/** 读取已选 Tetra 模块槽位，不在物品代码中写入平衡数值。 */
 public final class TetraItemStackProfileResolver {
     private TetraItemStackProfileResolver() {
     }
@@ -46,10 +46,10 @@ public final class TetraItemStackProfileResolver {
     }
 
     /**
-     * Single authoritative profile entry point for runtime consumers. The
-     * selected Tetra modules and their material are read from the ItemStack;
-     * fast-changing state is supplied explicitly and never stored in the
-     * static profile cache key.
+     * 供运行时调用者使用的唯一权威档案入口。
+     * 从 ItemStack 读取已选 Tetra 模块及其材料；
+     * 快速变化的状态由调用方显式提供，且不会写入
+     * 静态档案缓存键。
      */
     public static GunProfileResolver.ResolvedGunProfile resolveComplete(IModularItem item, ItemStack stack,
                                                                          RuntimeState runtime) {
@@ -82,20 +82,20 @@ public final class TetraItemStackProfileResolver {
                 .findFirst().map(ModuleConfig.Body::twoHanded).orElse(false);
     }
 
-    /** Returns the validated special-inlay IDs currently stored on this gun. */
+    /** 返回当前枪械中已验证的特殊嵌片 ID。 */
     public static Set<String> specialTraits(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return Set.of();
         return SpecialInlayPolicy.resolve(stack.getOrCreateTag(), TaCZinTetra.MODULE_CONFIG).activeIds();
     }
 
-    /** Reads both explicit inlay NBT and the real Tetra special slot. */
+    /** 同时读取显式嵌片 NBT 与真实 Tetra 特殊槽位。 */
     public static Set<String> specialTraits(IModularItem item, ItemStack stack) {
         if (item == null || stack == null || stack.isEmpty()) return Set.of();
         var requested = new java.util.LinkedHashSet<>(specialTraits(stack));
         try {
             if (item.getModuleFromSlot(stack, GunModuleSlots.SPECIAL) != null) requested.add("socket");
         } catch (RuntimeException ignored) {
-            // An incomplete module tree is treated as having no special slot.
+            // 模块树不完整时，按不存在特殊槽位处理。
         }
         return SpecialInlayPolicy.resolve(requested, TaCZinTetra.MODULE_CONFIG,
                 hasModule(item, stack, GunModuleSlots.SPECIAL)).activeIds();
@@ -105,10 +105,10 @@ public final class TetraItemStackProfileResolver {
         if (module == null) return null;
         String key = module.getKey();
         if (key == null) return null;
-        // A Tetra 6.17 module instance is registered by its complete module
-        // path (for example taczintetra/body/pistol). The server-side module
-        // data may not have a selected VariantData yet, so derive the model
-        // id from that path and only use VariantData when it is available.
+        // Tetra 6.17 模块实例使用完整模块路径注册
+        // （例如 taczintetra/body/pistol）。服务端模块
+        // 数据可能尚未选中 VariantData，因此从路径推导模型
+        // ID，并且仅在 VariantData 可用时读取它。
         String variantKey = key.substring(key.lastIndexOf('/') + 1) + "/";
         return TetraModuleSelection.from(key, variantKey,
                 stack.getOrCreateTag().getString(key + "_material"));
@@ -117,10 +117,10 @@ public final class TetraItemStackProfileResolver {
     private static boolean hasModule(IModularItem item, ItemStack stack, String slot) {
         try {
             ItemModule module = item.getModuleFromSlot(stack, slot);
-            // Tetra 6.17 can leave VariantData unresolved on the logical server while
-            // the module is already installed. Presence of the slot module is the
-            // authoritative attachment signal; requiring VariantData made stock/grip/
-            // optic work on the client but silently disappear from server profiles.
+            // Tetra 6.17 可能在逻辑服务端尚未解析 VariantData，但模块已经安装。
+            // 槽位模块是否存在才是权威的安装信号；
+            // 强制要求 VariantData 会导致枪托、握把和
+            // 瞄准镜在客户端生效，却在服务端档案中静默消失。
             return module != null;
         } catch (RuntimeException ignored) {
             return false;
@@ -147,7 +147,7 @@ public final class TetraItemStackProfileResolver {
     public record SelectedModules(TetraModuleSelection body, TetraModuleSelection barrel,
                                   TetraModuleSelection magazine) { }
 
-    /** Runtime-only fields intentionally kept outside static module identity. */
+    /** 仅用于运行时的字段，刻意不纳入静态模块身份。 */
     public record RuntimeState(float heat, boolean overheatLocked, int currentAmmo,
                                int resourceAmount, Set<String> specialTraits) {
         public RuntimeState {

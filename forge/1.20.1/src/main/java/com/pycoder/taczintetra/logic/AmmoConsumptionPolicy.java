@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Consumes one loaded round per independent trigger shot, never per pellet. */
+/** 每次独立扣动扳机消耗一发已装填弹药，不按弹丸数量消耗。 */
 public final class AmmoConsumptionPolicy {
     private AmmoConsumptionPolicy() {
     }

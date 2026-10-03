@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Keeps pellet damage distribution independent from trigger-shot count. */
+/** 使弹丸伤害分布独立于扳机射击次数。 */
 public final class ProjectileDamageCalculator {
     private ProjectileDamageCalculator() {
     }

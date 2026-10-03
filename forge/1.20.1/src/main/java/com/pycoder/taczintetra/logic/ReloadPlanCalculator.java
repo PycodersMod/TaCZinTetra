@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Combines resource affordability with single-batch/fill reload planning. */
+/** 综合资源可支付数量与单批/装满式换弹计划。 */
 public final class ReloadPlanCalculator {
     private ReloadPlanCalculator() { }
 

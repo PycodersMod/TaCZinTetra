@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Pure preflight rules shared by network and direct TaCZ reload entry points. */
+/** 网络入口与 TaCZ 直接装填入口共用的纯预检规则。 */
 public final class ReloadStartPolicy {
     private ReloadStartPolicy() { }
 

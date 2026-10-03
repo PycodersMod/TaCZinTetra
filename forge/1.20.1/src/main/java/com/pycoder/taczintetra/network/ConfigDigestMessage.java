@@ -8,7 +8,7 @@ import net.minecraftforge.network.NetworkDirection;
 
 import java.util.function.Supplier;
 
-/** Server-authoritative configuration compatibility check sent after login. */
+/** 登录后发送的服务端权威配置兼容性检查。 */
 public record ConfigDigestMessage(String digest) {
     public static void encode(ConfigDigestMessage message, FriendlyByteBuf buffer) {
         buffer.writeUtf(message.digest() == null ? "" : message.digest(), 32);

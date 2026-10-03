@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.slf4j.Logger;
 
-/** Dev-only evidence that TaCZ's actual humanoid off-hand renderer sees modular guns. */
+/** 仅供开发使用的证据钩子，用于确认 TaCZ 的真实人形副手渲染器能识别模组枪械。 */
 @Mixin(HumanoidOffhandRender.class)
 public abstract class ThirdPersonHumanoidOffhandProbeMixin {
     private static final Logger LOGGER = LogUtils.getLogger();

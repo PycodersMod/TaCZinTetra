@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 
-/** Optional JEI bridge. The class is only loaded when JEI is installed. */
+/** 可选 JEI 桥接；仅在安装 JEI 时加载此类。 */
 @JeiPlugin
 public final class TaczJeiPlugin implements IModPlugin {
     private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath("taczintetra", "jei_plugin");
@@ -60,8 +60,8 @@ public final class TaczJeiPlugin implements IModPlugin {
             runtime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, hidden);
         }
 
-        // Ingredient removal alone does not remove recipe rows already indexed by JEI.
-        // Resolve every loaded recipe through JEI so custom TaCZ categories are covered.
+        // 仅移除材料并不会删除 JEI 已建立索引的配方行。
+        // 通过 JEI 解析所有已加载配方，确保覆盖自定义 TaCZ 分类。
         var level = net.minecraft.client.Minecraft.getInstance().level;
         if (level != null) {
             int hiddenRecipes = hideNativeRecipes(runtime, level.getRecipeManager().getRecipes());

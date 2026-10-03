@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Resolves body-controlled independent trigger shots. */
+/** 解析由枪身控制的独立扳机射击。 */
 @FunctionalInterface
 public interface FireControlStrategy {
     FireControlStrategy DEFAULT = definition -> definition == null ? 0 : definition.shotsPerTrigger();

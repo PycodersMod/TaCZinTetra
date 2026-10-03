@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.network;
 
-/** Validates only transport-level reload intent invariants on the server. */
+/** 仅在服务端验证换弹意图的传输层不变量。 */
 public final class ReloadIntentValidator {
     private ReloadIntentValidator() {
     }

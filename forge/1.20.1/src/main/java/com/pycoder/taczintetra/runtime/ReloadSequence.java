@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.runtime;
 
-/** Generates positive reload intent sequence numbers without signed overflow. */
+/** 生成正数装填意图序号，并避免有符号溢出。 */
 public final class ReloadSequence {
     private ReloadSequence() {
     }

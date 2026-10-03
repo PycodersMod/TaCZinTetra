@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Mirrors TaCZ's server-side tolerance for client shot timestamps. */
+/** 复现 TaCZ 服务端对客户端射击时间戳的容差规则。 */
 public final class NetworkTimestampPolicy {
     private NetworkTimestampPolicy() { }
 

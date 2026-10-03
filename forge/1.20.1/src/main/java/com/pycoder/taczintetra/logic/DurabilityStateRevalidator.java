@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Clamps Minecraft-style item damage without deciding Tetra broken semantics. */
+/** 将物品损伤值限制在 Minecraft 规则范围内，不在此处判定 Tetra 的损坏语义。 */
 public final class DurabilityStateRevalidator {
     private DurabilityStateRevalidator() {
     }

@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import net.minecraft.nbt.CompoundTag;
 
-/** Serializes resource amounts without coupling the account model to ItemStack. */
+/** 序列化资源数量，不让账户模型依赖 ItemStack。 */
 public final class ResourceNbtAdapter {
     private static final String RESOURCES = "resources";
 

@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Keeps published metadata aligned with the one dependency matrix actually verified. */
+/** 确保已发布元数据与实际验证过的依赖矩阵保持一致。 */
 class VersionCompatibilityContractTest {
     @Test
     void metadataPinsTheVerifiedForgeAndIntegrationVersions() throws Exception {

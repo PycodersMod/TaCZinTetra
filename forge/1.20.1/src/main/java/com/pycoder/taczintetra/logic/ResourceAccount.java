@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.logic;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Immutable resource-channel snapshot; mutation into ItemStack NBT is an adapter concern. */
+/** 不可变的资源通道快照；写入 ItemStack NBT 属于适配器职责。 */
 public final class ResourceAccount {
     private final Map<String, Integer> amounts;
 
@@ -19,7 +19,7 @@ public final class ResourceAccount {
         return resourceId == null ? 0 : amounts.getOrDefault(resourceId, 0);
     }
 
-    /** Returns the number of complete batches payable from all required resources. */
+    /** 返回所有必需资源都足以支付的完整批次数量。 */
     public int affordableBatches(Map<String, Integer> cost) {
         if (cost == null || cost.isEmpty()) return Integer.MAX_VALUE;
         long result = Long.MAX_VALUE;
@@ -31,7 +31,7 @@ public final class ResourceAccount {
         return result == Long.MAX_VALUE ? 0 : (int) Math.min(Integer.MAX_VALUE, result);
     }
 
-    /** Consumes one or more complete batches and leaves the original account unchanged. */
+    /** 消耗一个或多个完整批次，并保持原资源账户不变。 */
     public ResourceAccount consume(Map<String, Integer> cost, int batches) {
         if (cost == null || batches <= 0 || affordableBatches(cost) < batches) return this;
         Map<String, Integer> next = new HashMap<>(amounts);

@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.runtime;
 
 import net.minecraft.world.InteractionHand;
 
-/** Authoritative-ready coordination primitive that prevents simultaneous reloads. */
+/** 可供权威逻辑使用的协调原语，用于阻止并发换弹。 */
 public final class DualHandReloadState {
     private InteractionHand activeHand;
 

@@ -4,8 +4,8 @@ import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
 /**
- * Deterministic static profile calculation. Runtime heat/ammo state is kept
- * outside this resolver so frequent ticks do not invalidate static caches.
+ * 确定性的静态档案计算。运行时热量/弹药状态
+ * 保留在此解析器之外，避免频繁 tick 使静态缓存失效。
  */
 public final class GunProfileResolver {
     private static final Logger LOGGER = LogUtils.getLogger();

@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Resolves magazine/feed consumption independently from projectile count. */
+/** 独立于弹丸数量解析弹匣/供弹消耗。 */
 @FunctionalInterface
 public interface FeedStrategy {
     FeedStrategy DEFAULT = AmmoConsumptionPolicy::consume;

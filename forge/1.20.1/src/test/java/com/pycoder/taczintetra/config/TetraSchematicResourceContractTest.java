@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Prevents Tetra schematics from advertising module keys that cannot be crafted. */
+/** 防止 Tetra 蓝图声明无法制作的模块键。 */
 class TetraSchematicResourceContractTest {
     private static final Path RESOURCE_ROOT = Path.of("src/main/resources");
     private static final String MODULE_NAMESPACE = "taczintetra";

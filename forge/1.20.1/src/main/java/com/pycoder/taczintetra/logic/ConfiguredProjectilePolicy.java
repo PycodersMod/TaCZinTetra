@@ -7,7 +7,7 @@ import com.tacz.guns.resource.pojo.data.gun.BulletData;
 
 import java.util.Map;
 
-/** Resolves projectile-only behavior that must be applied to the native entity. */
+/** 解析必须应用于原生实体的弹丸专属行为。 */
 public final class ConfiguredProjectilePolicy {
     private static final Gson GSON = new Gson();
 
@@ -24,7 +24,7 @@ public final class ConfiguredProjectilePolicy {
                 .orElse(0.0f);
     }
 
-    /** Optional absolute overrides for the native bullet motion fields. */
+    /** 对原生子弹运动字段的可选绝对值覆盖项。 */
     public static MotionOverrides motionOverrides(ModuleConfig config, String barrelId) {
         if (config == null || barrelId == null || barrelId.isBlank()) {
             return MotionOverrides.empty();
@@ -39,7 +39,7 @@ public final class ConfiguredProjectilePolicy {
                 optionalPositive(stats, "ignite"));
     }
 
-    /** Builds a new native bullet snapshot without mutating TaCZ's registered template. */
+    /** 创建新的原生子弹快照，不修改 TaCZ 已注册的模板。 */
     public static BulletData nativeBulletData(ModuleConfig config, String barrelId, BulletData template) {
         if (template == null || config == null || barrelId == null || barrelId.isBlank()) return template;
         Map<String, Double> stats = config.barrels().stream()

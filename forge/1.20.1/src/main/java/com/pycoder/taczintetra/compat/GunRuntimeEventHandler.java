@@ -14,7 +14,7 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Bridges TaCZ kinetic-bullet damage outcomes to the public runtime event API. */
+/** 将 TaCZ 动能子弹的伤害结果转发到公开运行时事件 API。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class GunRuntimeEventHandler {
     private GunRuntimeEventHandler() {

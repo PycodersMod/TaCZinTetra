@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 
-/** Serializes the editable ingredient list and the TaCZ AmmoId payload. */
+/** 序列化可编辑材料列表及 TaCZ AmmoId 数据。 */
 public final class AmmoResourceRecipeSerializer implements RecipeSerializer<AmmoResourceRecipe> {
     @Override
     public AmmoResourceRecipe fromJson(ResourceLocation id, JsonObject json) {

@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import com.pycoder.taczintetra.TaCZinTetra;
 import com.tacz.guns.api.event.common.GunFireEvent;
 
-/** Enforces native TaCZ restrictions at gameplay boundaries. */
+/** 在游戏逻辑边界处强制执行 TaCZ 原生限制。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class NativeTaczRestrictionHandler {
     private NativeTaczRestrictionHandler() { }

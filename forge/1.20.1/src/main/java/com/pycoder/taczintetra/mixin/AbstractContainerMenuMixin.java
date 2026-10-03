@@ -12,10 +12,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
-/** Adds one generic server-authoritative insertion path for standard menus. */
+/** 为标准菜单添加统一的服务端权威插入流程。 */
 @Mixin(AbstractContainerMenu.class)
 public abstract class AbstractContainerMenuMixin {
-    /** Named userdev and SRG release servers expose different literal names. */
+    /** 命名的 userdev 与 SRG 正式服务器会暴露不同的字面名称。 */
     @Inject(method = {"clicked", "m_150399_"}, at = @At("HEAD"), cancellable = true, remap = false)
     private void taczintetra$insertCarriedResource(int slotId, int button, ClickType clickType,
                                                     Player player, CallbackInfo ci) {

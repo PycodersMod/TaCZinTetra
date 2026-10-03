@@ -6,7 +6,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import com.google.gson.JsonObject;
 
-/** Reads the user-editable TOML recipe while retaining vanilla shaped-recipe networking. */
+/** 读取用户可编辑的 TOML 配方，同时保留原版有序配方网络同步方式。 */
 public final class ConfiguredShapedRecipeSerializer implements RecipeSerializer<ShapedRecipe> {
     @Override
     public ShapedRecipe fromJson(ResourceLocation id, JsonObject json) {

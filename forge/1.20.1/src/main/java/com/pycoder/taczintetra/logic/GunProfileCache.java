@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.logic;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** Thread-safe static profile cache; runtime heat/ammo is not cached here. */
+/** 线程安全的静态档案缓存；运行时热量/弹药不会缓存在此处。 */
 public final class GunProfileCache {
     private static final ConcurrentMap<GunProfileCacheKey, GunProfileResolver.ResolvedGunProfile> VALUES = new ConcurrentHashMap<>();
 

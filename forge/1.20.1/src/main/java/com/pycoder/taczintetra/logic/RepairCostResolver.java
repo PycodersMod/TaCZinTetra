@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import com.pycoder.taczintetra.config.ModuleConfig;
 
-/** Resolves repair agent and one-shot quantity from the user-editable catalog. */
+/** 从用户可编辑目录中解析修理材料和单次消耗数量。 */
 public final class RepairCostResolver {
     private RepairCostResolver() { }
 
@@ -24,7 +24,7 @@ public final class RepairCostResolver {
         return new Result(agent, repairItem, count);
     }
 
-    /** Tetra stores material keys as namespaced slash paths, while JSON uses short ids. */
+    /** Tetra 将材料键保存为带命名空间的斜杠路径，而 JSON 使用短 ID。 */
     private static String canonicalMaterialId(String value) {
         if (value == null) return "";
         String normalized = value.trim();
@@ -36,7 +36,7 @@ public final class RepairCostResolver {
         return normalized;
     }
 
-    /** Tetra can expose a namespaced slot path while the catalog uses the short domain name. */
+    /** Tetra 可能提供带命名空间的槽位路径，而目录使用简短域名。 */
     private static String canonicalSlotId(String value) {
         if (value == null) return "";
         String normalized = value.trim();

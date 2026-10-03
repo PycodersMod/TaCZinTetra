@@ -11,7 +11,7 @@ import java.util.WeakHashMap;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
-/** Connects the per-hand reload ownership primitive to TaCZ's entity lifecycle. */
+/** 将逐手换弹所有权原语接入 TaCZ 实体生命周期。 */
 public final class ReloadRuntimeCoordinator {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<LivingEntity, DualHandRuntimeState> STATES = new WeakHashMap<>();

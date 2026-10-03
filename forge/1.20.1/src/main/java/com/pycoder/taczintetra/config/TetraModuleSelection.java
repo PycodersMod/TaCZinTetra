@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.config;
 
-/** Safe, namespace-aware view of a Tetra module registry key. */
+/** 对 Tetra 模块注册表键提供带命名空间感知的安全视图。 */
 public record TetraModuleSelection(String variantId, String materialId) {
     public static TetraModuleSelection from(String moduleKey, String variantKey, String materialKey) {
         if (moduleKey == null || variantKey == null || materialKey == null || variantKey.isBlank()) return null;

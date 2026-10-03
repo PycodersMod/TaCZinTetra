@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Mirrors the TaCZ state gates that must precede a modular shot. */
+/** 复现模组射击前必须通过的 TaCZ 状态门禁。 */
 public final class ShootStatePolicy {
     private ShootStatePolicy() {
     }

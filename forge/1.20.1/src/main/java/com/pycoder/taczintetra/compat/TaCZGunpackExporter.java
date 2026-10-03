@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-/** Exports the built-in minimal TaCZ pack to TaCZ's native external pack directory. */
+/** 将内置的最小 TaCZ 内容包导出到 TaCZ 原生外部内容包目录。 */
 public final class TaCZGunpackExporter {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String RESOURCE_PREFIX = "/assets/tacz/custom/taczintetra/";

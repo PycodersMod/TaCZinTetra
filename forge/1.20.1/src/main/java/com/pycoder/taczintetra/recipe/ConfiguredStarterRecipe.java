@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import java.util.List;
 import se.mickelus.tetra.items.modular.IModularItem;
 
-/** Builds the starter recipe from the editable Forge TOML without replacing other datapack recipes. */
+/** 根据可编辑 Forge TOML 创建初始配方，不替换其他数据包配方。 */
 public final class ConfiguredStarterRecipe {
     private static final Logger LOGGER = LogUtils.getLogger();
     private ConfiguredStarterRecipe() { }

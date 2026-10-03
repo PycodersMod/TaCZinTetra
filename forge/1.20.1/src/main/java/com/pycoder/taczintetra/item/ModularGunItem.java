@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Tetra-backed firearm root. Runtime TaCZ behaviour is deliberately kept in
- * services so module data and per-stack state do not leak into the Item class.
+ * 由 Tetra 驱动的枪械主体。TaCZ 运行行为刻意放在服务逻辑中，
+ * 避免模块数据和逐物品栈状态泄漏到 Item 类中。
  */
 public class ModularGunItem extends ItemModularHandheld implements IGun {
     private static final String AMMO = "taczintetra_ammo";
@@ -40,9 +40,9 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     private static final String HEAT_TICK = "taczintetra_heat_tick";
     private static final ResourceLocation GUN_ID = ResourceLocation.fromNamespaceAndPath(TaCZinTetra.MOD_ID, "modular_gun");
     private static final ResourceLocation DISPLAY_ID = ResourceLocation.fromNamespaceAndPath("tacz", "modular_gun_display");
-    /** Cooling state must not mutate the held stack every server tick. */
+    /** 冷却状态不得在每个服务端 tick 修改手持物品栈。 */
     private static final Map<ItemStack, Float> RUNTIME_HEAT = Collections.synchronizedMap(new WeakHashMap<>());
-    /** Separate lazy-cooling anchor; persisted NBT remains write-on-shot. */
+    /** 独立的延迟冷却锚点；持久化 NBT 仍只在开火时写入。 */
     private static final Map<ItemStack, Long> RUNTIME_HEAT_TICK = Collections.synchronizedMap(new WeakHashMap<>());
 
     public ModularGunItem(Properties properties) {
@@ -61,9 +61,9 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     }
 
     /**
-     * Tetra 6.17 only ships default minor layouts for zero through three slots.
-     * Keep the fourth configured slot visible with an explicit, non-overlapping
-     * layout instead of indexing Tetra's three-slot default array.
+     * Tetra 6.17 仅为零至三个槽位提供默认次级布局。
+     * 第四个配置槽位使用显式且互不重叠的布局保持可见，
+     * 不要越界访问 Tetra 的三槽位默认数组。
      */
     @Override
     public GuiModuleOffsets getMinorGuiOffsets(ItemStack stack) {
@@ -73,7 +73,7 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         return super.getMinorGuiOffsets(stack);
     }
 
-    /** Refreshes Tetra's inherited base values after the editable catalog reloads. */
+    /** 可编辑目录重载后，刷新继承自 Tetra 的基础数值。 */
     public void refreshConfiguredDurability() {
         this.baseDurability = configuredInt("base_durability", 100);
         this.baseIntegrity = configuredInt("base_integrity", 1);
@@ -135,7 +135,7 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     }
     @Override public void setCurrentAmmoCount(ItemStack stack, int count) { setDummyAmmoAmount(stack, count); }
 
-    /** Revalidates persisted ammo/resource state against the current module profile. */
+    /** 根据当前模块档案重新验证已保存的弹药/资源状态。 */
     public void revalidateRuntimeState(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return;
         int maxAmmo = getMaxDummyAmmoAmount(stack);
@@ -160,7 +160,7 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         }
     }
     @Override public void reduceCurrentAmmoCount(ItemStack stack) { setCurrentAmmoCount(stack, getCurrentAmmoCount(stack) - 1); }
-    /** Consumes the exact number of independent rounds represented by a shot batch. */
+    /** 精确消耗一次射击批次所代表的独立弹药数量。 */
     public void reduceCurrentAmmoCount(ItemStack stack, int rounds) {
         int safeRounds = Math.max(0, rounds);
         setCurrentAmmoCount(stack, Math.max(0, getCurrentAmmoCount(stack) - safeRounds));
@@ -202,7 +202,7 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
                 return definition == null || definition.material == null ? 0 : definition.material.count;
             }
         } catch (RuntimeException ignored) {
-            // Invalid or incomplete module state must make the repair unavailable.
+            // 模块状态无效或不完整时，不得开放修理。
         }
         return 0;
     }
@@ -276,12 +276,12 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         return 1;
     }
 
-    /** Total native projectiles for one trigger, capped by the shared safety limit. */
+    /** 单次扣动扳机产生的原生弹丸总数，并受统一安全上限约束。 */
     public int projectileCount(ItemStack stack) {
         return projectileCount(stack, independentShots(stack));
     }
 
-    /** Total projectiles for an already validated independent-round count. */
+    /** 根据已验证的独立弹药数量计算弹丸总数。 */
     public int projectileCount(ItemStack stack, int independentShots) {
         int pellets = (int) Math.round(heatStat(stack, "pellets_per_round", 1));
         return ShotCountCalculator.totalProjectiles(Math.max(0, independentShots), pellets, 64);
@@ -308,8 +308,8 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
                 coolingCoefficient(stack), ticks / 20.0,
                 heatStat(stack, "heat_epsilon", 0.01));
         RUNTIME_HEAT.put(stack, (float) cooled);
-        // Advance only the runtime anchor. Persisted NBT stays write-on-shot,
-        // while the same elapsed interval cannot be cooled twice.
+        // 仅推进运行时锚点。持久化 NBT 仍在射击时写入，
+        // 同一时间间隔不能重复用于冷却。
         RUNTIME_HEAT_TICK.put(stack, gameTime);
         updateOverheat(stack);
     }
@@ -342,7 +342,7 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         return TaCZinTetra.MODULE_CONFIG.heatCurves().get(key);
     }
 
-    /** Cooling is the barrel type multiplier scaled by the selected material. */
+    /** 冷却值由枪管类型倍率乘以所选材料系数计算。 */
     private double coolingCoefficient(ItemStack stack) {
         double barrelMultiplier = heatStat(stack, "cooling_coefficient", 4);
         try {

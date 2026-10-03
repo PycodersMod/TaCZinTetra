@@ -6,7 +6,7 @@ import net.minecraft.nbt.CompoundTag;
 
 import java.util.UUID;
 
-/** Produces the non-negative stack fingerprint carried by client intents. */
+/** 生成由客户端意图携带的非负物品栈指纹。 */
 public final class StackIdentity {
     public static final String UNIQUE_ID = "taczintetra_stack_uuid";
 
@@ -22,7 +22,7 @@ public final class StackIdentity {
                 stack.getTag() == null ? 0 : canonicalTagHash(stack.getTag()));
     }
 
-    /** Adds a durable per-stack marker on the authoritative side when absent. */
+    /** 权威端缺少标记时，为该物品栈添加持久标记。 */
     public static void ensureUniqueId(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return;
         CompoundTag tag = stack.getOrCreateTag();
@@ -30,9 +30,9 @@ public final class StackIdentity {
     }
 
     /**
-     * Runtime state is intentionally excluded: server-side ammo, heat, damage
-     * and the TaCZ bridge tag can change before the client receives the sync.
-     * Module selection and other durable configuration tags remain identity.
+     * 刻意排除运行时状态：服务端弹药、热量、耐久
+     * 和 TaCZ 桥接标签都可能在客户端收到同步前发生变化。
+     * 模块选择及其他持久配置标签仍属于物品身份。
      */
     static int canonicalTagHash(CompoundTag tag) {
         if (tag == null) return 0;

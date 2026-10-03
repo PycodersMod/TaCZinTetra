@@ -18,7 +18,7 @@ import java.util.Map;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
-/** Commits resources and dummy ammo only after TaCZ reports reload completion. */
+/** 仅在 TaCZ 报告换弹完成后才提交资源与虚拟弹药。 */
 public final class ReloadRuntimeSettlementService {
     private static final String PENDING = "taczintetra_reload_pending";
     private static final String FILL_MODE = "taczintetra_reload_fill";
@@ -42,7 +42,7 @@ public final class ReloadRuntimeSettlementService {
         }
     }
 
-    /** Clears every TiT reload marker from the stack that owned the transaction. */
+    /** 清除事务所属物品栈上的所有 TiT 换弹标记。 */
     public static void clearRuntimeState(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return;
         clearPending(stack);
@@ -97,7 +97,7 @@ public final class ReloadRuntimeSettlementService {
             LOGGER.warn("Refusing non-atomic reload settlement with {} external resource debits", externalOperations);
             return false;
         }
-        // Preflight every external backend before mutating any one of them.
+        // 在修改任何外部后端之前，先对所有外部后端执行预检。
         for (var entry : recipe.cost().entrySet()) {
             ExternalCapabilityAdapter adapter = adapters.get(entry.getKey());
             int consumed = entry.getValue() * result.paidBatches();

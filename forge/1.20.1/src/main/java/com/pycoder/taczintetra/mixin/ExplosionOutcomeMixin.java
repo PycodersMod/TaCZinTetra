@@ -17,7 +17,7 @@ import se.mickelus.tetra.module.schematic.UpgradeSchematic;
 
 import java.util.Map;
 
-/** Skips only malformed optional Tetra explosion effects instead of crashing the workbench. */
+/** 仅跳过格式错误的可选 Tetra 爆炸效果，避免工作台崩溃。 */
 @Mixin(value = ExplosionOutcome.class, remap = false)
 public abstract class ExplosionOutcomeMixin {
     @Shadow

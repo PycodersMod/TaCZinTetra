@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Applies normalized heat effects without mutating static gun profiles. */
+/** 应用规范化热量效果，不修改静态枪械档案。 */
 public final class HeatEffectPolicy {
     private HeatEffectPolicy() {
     }

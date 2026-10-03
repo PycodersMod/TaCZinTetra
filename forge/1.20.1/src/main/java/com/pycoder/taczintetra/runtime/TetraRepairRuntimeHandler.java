@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-/** Filters Tetra's per-stack repair choices without mutating shared registry definitions. */
+/** 筛选 Tetra 针对单个物品栈的修复选项，不修改共享注册表定义。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class TetraRepairRuntimeHandler {
     private TetraRepairRuntimeHandler() {
@@ -62,7 +62,7 @@ public final class TetraRepairRuntimeHandler {
         return onlyRepairAgents && repairItem != null && !repairItem.isBlank();
     }
 
-    /** Returns the material belonging to the major module currently being repaired. */
+    /** 返回当前正在修理的主要模块对应的材料。 */
     static String materialIdForSlot(String slot,
                                     TetraItemStackProfileResolver.SelectedModules modules) {
         if (modules == null || slot == null) return "";
@@ -89,8 +89,8 @@ public final class TetraRepairRuntimeHandler {
     private static String slotOf(String moduleKey) {
         if (moduleKey == null || moduleKey.isBlank()) return "";
         String[] parts = moduleKey.split("/");
-        // Tetra 6.17 registers split modules as namespace/slot/variant. The
-        // variant is not the repair domain (body/barrel/magazine).
+        // Tetra 6.17 将拆分模块注册为 namespace/slot/variant。
+        // variant 并不是修理类别（body/barrel/magazine）。
         for (int i = 0; i < parts.length - 1; i++) {
             if ("body".equals(parts[i]) || "barrel".equals(parts[i]) || "magazine".equals(parts[i])) {
                 return parts[i];

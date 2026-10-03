@@ -3,7 +3,7 @@ package com.pycoder.taczintetra.api;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Thread-safe addon adapter registry; registration is optional and reversible. */
+/** 线程安全的附属适配器注册表；注册是可选的，并且可以撤销。 */
 public final class AddonAdapterRegistry {
     private static final CopyOnWriteArrayList<ResourceInsertionAdapter> ITEM_ADAPTERS = new CopyOnWriteArrayList<>();
     private static final CopyOnWriteArrayList<ExternalCapabilityAdapter> EXTERNAL_ADAPTERS = new CopyOnWriteArrayList<>();
@@ -24,7 +24,7 @@ public final class AddonAdapterRegistry {
         if (adapter != null && !EXTERNAL_ADAPTERS.contains(adapter)) EXTERNAL_ADAPTERS.add(adapter);
     }
 
-    /** Registers an external adapter for a bounded scope and removes it exactly once when closed. */
+    /** 在指定作用域内注册外部适配器，并在关闭时恰好移除一次。 */
     public static Registration registerScoped(ExternalCapabilityAdapter adapter) {
         if (adapter == null) return () -> { };
         register(adapter);

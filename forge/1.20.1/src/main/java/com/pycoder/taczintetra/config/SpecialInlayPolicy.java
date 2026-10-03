@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Data-driven validation and NBT storage for special inlays. */
+/** 通过数据配置验证特殊嵌片并将其写入 NBT。 */
 public final class SpecialInlayPolicy {
     public static final String NBT_KEY = "taczintetra_special_inlays";
 
@@ -34,7 +34,7 @@ public final class SpecialInlayPolicy {
         return resolve(requested, config, true);
     }
 
-    /** Resolves persisted inlay IDs only when the real special socket is installed. */
+    /** 仅在真实特殊槽位已安装时解析持久化的嵌片 ID。 */
     public static Result resolve(Collection<String> requested, ModuleConfig config, boolean socketInstalled) {
         if (config == null) config = ModuleConfig.empty();
         Map<String, ModuleConfig.ConfigEntry> catalog = config.specialInlays().stream()

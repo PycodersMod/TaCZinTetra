@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.network;
 
 import com.tacz.guns.api.item.gun.FireMode;
 
-/** Server-side validation and deterministic cycling for a hand's fire mode. */
+/** 服务端验证并以确定方式切换某只手的开火模式。 */
 public final class FireModeIntentPolicy {
     private FireModeIntentPolicy() { }
 

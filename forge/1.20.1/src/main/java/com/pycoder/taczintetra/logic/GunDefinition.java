@@ -9,7 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Safe, data-driven gun-body definition parsed independently from Forge reload wiring. */
+/** 安全的数据驱动枪械主体定义，独立于 Forge 重载流程解析。 */
 public record GunDefinition(String weaponClass, List<String> fireModes, int shotsPerTrigger,
                             double loadedCapacityMultiplier, int roundsPerMinute,
                             boolean dualWield, String heatId) {

@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
-/** Server-authoritative right-click shot for the off-hand pistol in dual mode. */
+/** 双枪模式下副手手枪的右键射击请求，由服务端裁定。 */
 public record OffhandShootIntentMessage(int stackIdentity, int sequence, long timestamp) {
     private static final Map<ServerPlayer, Integer> LAST_SEQUENCE = new WeakHashMap<>();
     private static final Logger LOGGER = LogUtils.getLogger();

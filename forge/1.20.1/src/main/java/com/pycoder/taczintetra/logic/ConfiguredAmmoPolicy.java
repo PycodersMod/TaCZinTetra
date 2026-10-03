@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import net.minecraft.resources.ResourceLocation;
 
-/** Resolves an explicit configured ammo id without hiding malformed configuration. */
+/** 解析显式配置的弹药 ID，并保留格式错误配置的可见性。 */
 public final class ConfiguredAmmoPolicy {
     private ConfiguredAmmoPolicy() { }
 

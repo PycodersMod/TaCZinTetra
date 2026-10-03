@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the native TaCZ registry coverage and debug-config consumption. */
+/** 确保原生 TaCZ 注册表覆盖范围及调试配置读取正确。 */
 class NativeTaczRestrictionContractTest {
     private static final Path ROOT = Path.of("src/main/java");
 

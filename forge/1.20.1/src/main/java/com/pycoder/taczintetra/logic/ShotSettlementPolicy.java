@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Converts a partially-created projectile batch back into independent rounds. */
+/** 将部分创建的弹丸批次换算回独立弹数。 */
 public final class ShotSettlementPolicy {
     private ShotSettlementPolicy() {
     }

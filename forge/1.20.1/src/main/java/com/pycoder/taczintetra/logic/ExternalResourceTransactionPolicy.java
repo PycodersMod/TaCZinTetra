@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Decides whether a set of external debits can be safely started. */
+/** 判定一组外部扣款能否安全开始。 */
 public final class ExternalResourceTransactionPolicy {
     private ExternalResourceTransactionPolicy() {
     }

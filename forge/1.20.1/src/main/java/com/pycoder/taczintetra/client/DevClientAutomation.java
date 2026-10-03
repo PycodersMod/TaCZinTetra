@@ -35,8 +35,8 @@ import com.pycoder.taczintetra.network.ModNetwork;
 import org.slf4j.Logger;
 
 /**
- * Development-only client smoke test. It is inert unless the JVM property is
- * explicitly enabled, so release and normal development clients are unchanged.
+ * 仅用于开发的客户端冒烟测试。只有显式启用 JVM 属性后才会执行，
+ * 不会影响发布版和普通开发客户端。
  */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID, value = Dist.CLIENT)
 public final class DevClientAutomation {
@@ -44,7 +44,7 @@ public final class DevClientAutomation {
     private static final boolean ENABLED = Boolean.getBoolean("taczintetra.dev_automation");
     private static final boolean LAN_HOST = Boolean.getBoolean("taczintetra.dev_lan_host");
     private static final boolean HOLD_HOLO = Boolean.getBoolean("taczintetra.dev_hold_holo");
-    /** This audit must never switch to a native TaCZ gun such as CZ75. */
+    /** 此审计绝不能切换为 CZ75 等 TaCZ 原生枪械。 */
     private static final boolean RUN_NATIVE_TACZ_PROBE = false;
     private static final boolean RUN_DUAL_HAND_PROBE = false;
     private static final boolean RUN_NM_PROBE = false;
@@ -151,9 +151,9 @@ public final class DevClientAutomation {
         if (!ENABLED) return;
         if (event.getScreen() instanceof HoloGui) {
             LOGGER.info("TaCZinTetra dev observed Tetra HoloGui opening");
-            // The holosphere is the first screen opened by quick-play on a
-            // fresh client. Initialize the same dev-only equipment probe as
-            // the workbench path so LAN guests do not remain empty-handed.
+            // 新客户端通过 quick-play 启动时首先打开全息球界面。
+            // 初始化与工作台流程相同的开发装备探针，
+            // 避免局域网访客没有装备。
             sendDualSetup(Minecraft.getInstance());
             return;
         }
@@ -207,10 +207,10 @@ public final class DevClientAutomation {
                     "taczintetra/magazine/standard", "taczintetra/wood/");
             var schematic = SchematicRegistry.getSchematic("taczintetra/special_socket");
             if (schematic != null) {
-                // showGui() installs the screen and starts its open animation. Opening
-                // the schematic in the same tick races that lifecycle and can leave the
-                // screenshot probe on the transition/empty frame. Defer until the
-                // HoloGui is the active screen, then wait two client ticks.
+                // showGui() 会安装界面并启动打开动画。同一 tick 中立即打开蓝图会与
+                // 界面生命周期竞争，导致
+                // 截图探针捕获过渡帧或空白帧。
+                // 等 HoloGui 成为当前界面后再延迟两个客户端 tick。
                 pendingHoloModular = modular;
                 pendingHoloDisplayStack = displayStack;
                 pendingHoloSchematic = schematic;
@@ -259,10 +259,8 @@ public final class DevClientAutomation {
             }
         }
 
-        // Dedicated GUI audit mode intentionally stops the broader smoke-test
-        // state machine once the real HoloGui is active, so a human/PID-scoped
-        // capture can inspect the special schematic without an automatic screen
-        // transition to the workbench or JEI.
+        // 专用 GUI 审计模式会在真实 HoloGui 激活后停止其余冒烟测试状态机，
+        // 便于人工或按 PID 定向截取特殊蓝图，避免界面自动切换到工作台或 JEI。
         if (HOLD_HOLO && minecraft.screen instanceof HoloGui) return;
 
         if (!workbenchScreenshotSent && workbenchScreenshotTicks >= 0
@@ -288,7 +286,7 @@ public final class DevClientAutomation {
 
         if (!workbenchClickSent && workbenchClickDelay >= 0
                 && minecraft.screen instanceof WorkbenchScreen) {
-            // This must run before the active/JEI state machine can return.
+            // 必须在 active/JEI 状态机提前返回之前运行此逻辑。
             return;
         }
 
@@ -313,9 +311,8 @@ public final class DevClientAutomation {
             return;
         }
 
-        // Tetra rebuilds its client stores after login; probe only after the
-        // custom entry is present so an early login event cannot record an
-        // empty catalog as a false negative.
+        // 登录后 Tetra 会重建客户端存储。确认自定义条目出现后再执行探测，
+        // 避免过早处理登录事件，把尚未加载的目录误记为缺失。
         if (!holoProbeLogged) probeHolosphereCatalog();
         if (!active) return;
 
@@ -339,9 +336,9 @@ public final class DevClientAutomation {
         }
         if (LAN_HOST && !lanPublished) {
             if (minecraft.getSingleplayerServer() != null) {
-                // The isolated LAN probe uses synthetic usernames. Keep this
-                // test-only path independent of Mojang session authentication;
-                // production servers retain their configured auth policy.
+                // 隔离的局域网探针使用合成用户名。此测试流程
+                // 不依赖 Mojang 会话认证；
+                // 正式服务器仍遵循已配置的认证策略。
                 minecraft.getSingleplayerServer().setUsesAuthentication(false);
                 LOGGER.info("TaCZinTetra dev LAN host disabled online authentication for isolated probe");
             }
@@ -388,9 +385,9 @@ public final class DevClientAutomation {
                     int identity = StackIdentity.of(offhand);
                     ReloadIntentMessage intent = new ReloadIntentMessage(true, false, identity, 2002);
                     ModNetwork.CHANNEL.sendToServer(intent);
-                    // Replay the same sequence after a few client ticks on
-                    // the real connection; the server gate must accept only
-                    // the first even when the duplicate is delayed.
+                    // 在真实连接上等待数个客户端 tick 后重放相同序列；
+                    // 即使重复包延迟到达，服务端门禁
+                    // 也只能接受第一次请求。
                     delayedReplayIntent = intent;
                     delayedReplayTicks = 5;
                     offhandReloadProbeSent = true;
@@ -420,14 +417,14 @@ public final class DevClientAutomation {
             }
         }
         if (ordinaryProbeStage > 0 && minecraft.screen != null) {
-            // The earlier Holo/workbench probes may leave a client screen
-            // open. The ordinary TaCZ probe is development-only and needs the
-            // same in-game input state as a normal player action.
+            // 前面的全息球或工作台探针可能仍留有客户端界面。
+            // 普通 TaCZ 探针仅供开发使用，需要
+            // 处于与玩家正常操作相同的游戏输入状态。
             minecraft.setScreen(null);
         }
         if (ordinaryProbeStage == 0 && dualModeProbeSent && minecraft.screen != null) {
-            // The dual-hand probe is also a gameplay phase. Close the GUI left
-            // by the preceding Tetra probes before exercising native shooting.
+            // 双手探针同样会执行游戏内操作。测试原生射击前，
+            // 先关闭此前 Tetra 探针留下的界面。
             minecraft.setScreen(null);
         }
         if (minecraft.screen != null) return;
@@ -579,8 +576,7 @@ public final class DevClientAutomation {
             return;
         }
 
-        // Do not send another client shoot packet after the requested burst
-        // has reached zero; the reload request below is asynchronous.
+        // 请求的连射次数归零后，不要再发送客户端射击数据包；下方的换弹请求是异步的。
         if (shotsRemaining <= 0) return;
 
         if (++stateLogTicks >= 20) {
@@ -601,7 +597,7 @@ public final class DevClientAutomation {
         int ammoBefore = modularAmmo(minecraft.player.getMainHandItem());
         ShootResult result = gunOperator.shoot();
         if (result == ShootResult.IS_DRAWING) {
-            // Keep probing without consuming one of the requested shots.
+            // 继续探测，但不要消耗请求射击次数。
             ticksUntilShot = 2;
             LOGGER.info("TaCZinTetra dev client automation shoot result={}, waiting for draw", result);
             return;
@@ -672,8 +668,8 @@ public final class DevClientAutomation {
             boolean clicked = false;
             int hitX = -1;
             int hitY = -1;
-            // Screen callbacks receive GUI-scaled logical coordinates, while
-            // the saved screenshot is physical pixels (GUI scale 2 here).
+            // 界面回调接收经过 GUI 缩放的逻辑坐标；
+            // 保存的截图使用物理像素坐标（此处 GUI 缩放为 2）。
             for (int x = 0; x <= 80 && !clicked; x += 1) {
                 for (int y = 45; y <= 125; y += 1) {
                     if (minecraft.screen.mouseClicked(x, y, 0)) {
@@ -715,9 +711,9 @@ public final class DevClientAutomation {
         if (element.getClass().getName().contains("CraftButtonGui")) {
             int clickX = screen.getGuiLeft() + x + Math.max(1, element.getWidth() / 2);
             int clickY = screen.getGuiTop() + y + Math.max(1, element.getHeight() / 2);
-            // WorkbenchScreen forwards raw logical screen coordinates to
-            // defaultGui; its root attachment space starts at (0, 0), not
-            // at AbstractContainerScreen.guiLeft/guiTop.
+            // WorkbenchScreen 会将原始逻辑屏幕坐标传给 defaultGui；根附着空间从 (0, 0) 开始，
+            // 不从 AbstractContainerScreen.guiLeft/guiTop 开始。
+
             root.updateFocusState(0, 0, clickX, clickY);
             if (!element.hasFocus()) {
                 int minX = Math.max(0, clickX - 120);
@@ -773,9 +769,9 @@ public final class DevClientAutomation {
             field.setAccessible(true);
             Object page = field.get(holoGui);
             if (page instanceof GuiElement pageElement) {
-                // HoloGui normally updates focus from the page root on mouse
-                // movement. Reproduce that propagation before dispatching the
-                // click to the leaf control.
+                // HoloGui 通常会在鼠标移动时从页面根节点更新焦点。
+                // 向叶节点控件派发点击前，
+                // 需要先复现这一步焦点传递。
                 pageElement.updateFocusState(0, 0, 1, 61);
             }
             return clickVariantListChild(page, 0);
@@ -788,8 +784,8 @@ public final class DevClientAutomation {
     private static boolean clickVariantListChild(Object candidate, int depth) {
         if (!(candidate instanceof GuiElement element) || depth > 10) return false;
         if (element.getClass().getName().contains("HoloVariantItemGui") && element.isVisible()) {
-            // Tetra's GuiClickable only accepts a click after its focus state
-            // has been updated by the page's mouse-move handling.
+            // Tetra 的 GuiClickable 只有在页面鼠标移动处理更新焦点状态后才会接受点击。
+
             element.updateFocusState(0, 0, element.getX() + 1, element.getY() + 1);
             LOGGER.info("TaCZinTetra dev variant item focus probe: x={}, y={}, focused={}",
                     element.getX(), element.getY(), element.hasFocus());

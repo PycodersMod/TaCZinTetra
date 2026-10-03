@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the independent default ammo acquisition chain from disappearing. */
+/** 确保独立的默认弹药获取链不会意外消失。 */
 class SurvivalRecipeContractTest {
     private static final Path MAIN = Path.of("src/main");
     private static final Pattern INGREDIENT_TOKEN = Pattern.compile("\\\"(item|tag)\\\":\\\"([^\\\"]+)\\\"");

@@ -12,7 +12,7 @@ import se.mickelus.tetra.blocks.workbench.WorkbenchTile;
 import se.mickelus.tetra.module.schematic.SchematicType;
 import com.pycoder.taczintetra.item.ModularGunItem;
 
-/** Prevents configured Tetra module crafting from consuming arbitrary raw materials. */
+/** 阻止已配置的 Tetra 模块制作消耗任意原材料。 */
 @Mixin(value = WorkbenchTile.class, remap = false)
 public abstract class WorkbenchTileMixin {
     @Inject(method = "craft", at = @At("HEAD"), cancellable = true, remap = false)

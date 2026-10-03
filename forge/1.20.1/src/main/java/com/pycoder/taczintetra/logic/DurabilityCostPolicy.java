@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Durability is charged per independent fired round, never per pellet. */
+/** 耐久按独立射击弹数扣除，而不是按弹丸数扣除。 */
 public final class DurabilityCostPolicy {
     private DurabilityCostPolicy() {
     }

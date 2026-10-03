@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Data-driven projectile and per-batch resource cost. */
+/** 由数据定义的弹丸及每批次资源消耗。 */
 public record AmmoRecipeDefinition(String projectile, String feedType, int batchSize, Map<String, Integer> cost) {
     public AmmoRecipeDefinition(String projectile, int batchSize, Map<String, Integer> cost) {
         this(projectile, "magazine", batchSize, cost);

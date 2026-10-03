@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Declarative cleanup policy; the Forge/Tetra adapter applies these flags to NBT. */
+/** 声明式清理策略；Forge/Tetra 适配器会将这些标记应用到 NBT。 */
 public final class ModuleReplacementPolicy {
     private ModuleReplacementPolicy() {
     }

@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.api;
 
 import net.minecraft.world.item.ItemStack;
 
-/** Optional adapter for addon-provided resource insertion into a modular gun. */
+/** 用于向模组枪械插入附属模组资源的可选适配器。 */
 public interface ResourceInsertionAdapter {
     ResourceChannelType channelType();
 

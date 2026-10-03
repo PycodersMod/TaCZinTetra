@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Immutable normalized heat curve. Values are linearly interpolated between configured points. */
+/** 不可变的规范化热量曲线；配置点之间使用线性插值。 */
 public record HeatCurve(List<Point> points) {
     public HeatCurve {
         List<Point> safe = new ArrayList<>();

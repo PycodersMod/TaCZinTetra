@@ -28,7 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 
-/** Reads public gun definitions on every server datapack reload. */
+/** 每次服务端数据包重载时重新读取公开枪械定义。 */
 public final class DefinitionReloadListener extends SimpleJsonResourceReloadListener {
     private static final Gson GSON = new GsonBuilder().create();
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -41,9 +41,9 @@ public final class DefinitionReloadListener extends SimpleJsonResourceReloadList
     private volatile Map<ResourceLocation, ResourceChannelDefinition> resourceChannels = Map.of();
 
     public DefinitionReloadListener() {
-        // Definitions are shipped under data/taczintetra/<type>/... . The
-        // namespace already scopes this listener, so adding a second
-        // taczintetra directory here would make every definition invisible.
+        // 定义文件位于 data/taczintetra/<type>/...。
+        // 命名空间已限定此监听器的范围，再添加一层
+        // taczintetra 目录会导致所有定义无法读取。
         super(GSON, "");
     }
 
@@ -51,8 +51,8 @@ public final class DefinitionReloadListener extends SimpleJsonResourceReloadList
     protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager manager,
                          ProfilerFiller profiler) {
         GunProfileCache.clear();
-        // The editable catalog is outside the datapack resource map; refresh it explicitly
-        // so profile, heat and attachment changes become visible after /reload.
+        // 可编辑目录不在数据包资源映射中，因此需显式刷新，
+        // 使档案、热量和附件更改在 /reload 后生效。
         TaCZinTetra.MODULE_CONFIG = ModuleConfigManager.loadOrCreate(FMLPaths.CONFIGDIR.get());
         ((ModularGunItem) ModItems.STARTER_PISTOL.get()).refreshConfiguredDurability();
         if (Boolean.getBoolean("taczintetra.dev_automation")) {

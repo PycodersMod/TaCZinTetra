@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards recipe filtering by both recipe id and produced item. */
+/** 同时按配方 ID 和产出物品限制配方过滤。 */
 class RecipeManagerMixinContractTest {
     private static final Path ROOT = Path.of("src/main/java");
 

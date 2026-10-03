@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.gametest.GameTestHolder;
 import se.mickelus.tetra.items.modular.IModularItem;
 
-/** Forge-side checks that require the real registries and TaCZ runtime. */
+/** 需要真实注册表与 TaCZ 运行时环境的 Forge 端检查。 */
 @GameTestHolder(TaCZinTetra.MOD_ID)
 public final class TaCZinTetraGameTests {
     private TaCZinTetraGameTests() { }

@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.level.Level;
 
-/** A data-driven shapeless recipe that creates TaCZ ammo with its AmmoId tag. */
+/** 数据驱动的无序配方，制作带有 AmmoId 标签的 TaCZ 弹药。 */
 public final class AmmoResourceRecipe implements CraftingRecipe {
     private static final String AMMO_ID = "AmmoId";
 

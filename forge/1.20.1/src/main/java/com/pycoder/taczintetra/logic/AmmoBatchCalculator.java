@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Pure batch-payment calculation; inventory and NBT mutation stay outside. */
+/** 仅计算批次消耗；背包与 NBT 的修改在此逻辑之外执行。 */
 public final class AmmoBatchCalculator {
     private AmmoBatchCalculator() {
     }

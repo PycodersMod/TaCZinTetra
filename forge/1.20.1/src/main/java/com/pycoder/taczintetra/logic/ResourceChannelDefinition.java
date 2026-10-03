@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.logic;
 
 import com.google.gson.JsonObject;
 
-/** Resource channel metadata; external channels remain optional adapters. */
+/** 资源通道元数据；外部通道仍通过可选适配器接入。 */
 public record ResourceChannelDefinition(String type, boolean external) {
     public static ResourceChannelDefinition from(JsonObject object) {
         String type = "item";

@@ -12,7 +12,7 @@ import com.pycoder.taczintetra.config.ModuleConfig;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Placeholder physical parts; their Tetra module mappings are data-driven. */
+/** 占位实体部件；对应的 Tetra 模块映射由数据驱动。 */
 public final class ModItems {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, TaCZinTetra.MOD_ID);
@@ -37,7 +37,7 @@ public final class ModItems {
     private ModItems() {
     }
 
-    /** Registers only finished parts declared by the user-editable catalog. */
+    /** 仅注册用户可编辑目录中声明的成品部件。 */
     public static void registerConfiguredParts(ModuleConfig config) {
         for (String path : ConfiguredPartIds.localPaths(config)) {
             CONFIGURED_PARTS.computeIfAbsent(path, ModItems::register);

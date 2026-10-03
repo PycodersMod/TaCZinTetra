@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.logic;
 
-/** Combines TaCZ's posture spread with the module-specific accuracy adjustment. */
+/** 将 TaCZ 姿势散布与模块专属精度修正合并计算。 */
 public final class SpreadPolicy {
     private SpreadPolicy() { }
 

@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Guards the optional JEI integration from regressing to item-only hiding. */
+/** 防止可选 JEI 集成退化为仅隐藏物品。 */
 class JeiRestrictionContractTest {
     private static final Path ROOT = Path.of("src/main");
 

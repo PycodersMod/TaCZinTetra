@@ -4,7 +4,7 @@ import com.pycoder.taczintetra.api.AddonAdapterRegistry;
 import com.pycoder.taczintetra.api.ExternalCapabilityAdapter;
 import net.minecraft.world.entity.LivingEntity;
 
-/** Read-only discovery and authoritative extraction for optional addon resource backends. */
+/** 对可选附属资源后端执行只读发现和权威提取。 */
 public final class ExternalResourceService {
     private ExternalResourceService() { }
 
@@ -27,7 +27,7 @@ public final class ExternalResourceService {
                 && isExactExtraction(amount, adapter.extract(holder, resourceId, amount));
     }
 
-    /** An extraction is committed only when the backend debits exactly what was requested. */
+    /** 仅当后端准确扣除所请求数量时，提取操作才会提交。 */
     static boolean isExactExtraction(int requested, int extracted) {
         return requested > 0 && extracted == requested;
     }

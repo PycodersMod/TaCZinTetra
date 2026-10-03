@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.runtime;
 
 import com.pycoder.taczintetra.network.ReloadIntentMessage;
 
-/** Converts the already-resolved client input into a transport-only intent. */
+/** 将已解析的客户端输入转换为仅用于传输的意图。 */
 public final class ReloadIntentFactory {
     private ReloadIntentFactory() {
     }

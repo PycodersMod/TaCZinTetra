@@ -53,7 +53,7 @@ import java.util.UUID;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Development-only server-side observation for the isolated client smoke test. */
+/** 为隔离客户端冒烟测试提供仅限开发使用的服务端观测。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class DevServerAutomation {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -163,7 +163,7 @@ public final class DevServerAutomation {
     private DevServerAutomation() {
     }
 
-    /** Stop the development-only inventory mirror once the client proves it has the off-hand stack. */
+    /** 客户端确认已收到副手物品栈后，停止仅用于开发的物品栏镜像。 */
     public static void stopOffhandBroadcast(ServerPlayer player) {
         if (player != null) {
             OFFHAND_SYNC_TICKS.put(player, Integer.MAX_VALUE);
@@ -256,10 +256,10 @@ public final class DevServerAutomation {
         if (stack.getOrCreateTag().getBoolean(MODULES_READY) && existingProfile != null) {
             probeSpecialInlays(player, stack);
             ensureDamageProbeTarget(player);
-            // The client command path can update the main hand before the
-            // vanilla inventory packet for the off hand arrives. Keep the dev
-            // probe's two stacks deterministic by mirroring the prepared main
-            // stack server-side, after its modules are complete.
+            // 客户端命令可能先更新主手，副手的原版物品栏数据包稍后才到达。
+            // 为保持开发探针的两组物品栈确定一致，
+            // 在模块组装完成后，将已准备好的主手物品栈同步到服务端副手。
+
             int syncTicks = OFFHAND_SYNC_TICKS.getOrDefault(player, 0);
             if (syncTicks < 100) {
                 ItemStack offhand = stack.copy();
@@ -276,8 +276,8 @@ public final class DevServerAutomation {
                 }
             }
             if (player instanceof ServerPlayer serverPlayer) {
-                // Keep the generic container path independent from the Tetra workbench
-                // probe: a skipped/changed workbench probe must not hide this contract.
+                // 通用容器流程不依赖 Tetra 工作台探针；
+                // 即使工作台探针跳过或变更，也不能影响此契约测试。
                 probeStandardContainerInsertion(serverPlayer, stack);
                 probePlayerInventoryInsertion(serverPlayer, stack);
                 probeSophisticatedBackpackInsertion(serverPlayer, stack);
@@ -309,8 +309,8 @@ public final class DevServerAutomation {
                 stack, GunModuleSlots.GRIP, "taczintetra/grip", "taczintetra/iron/");
         se.mickelus.tetra.items.modular.IModularItem.putModuleInSlot(
                 stack, GunModuleSlots.SPECIAL, "taczintetra/special/socket", "taczintetra/special_inlay/");
-        // The N/M probe replaces the previous starter stack, so apply the
-        // data-driven ballistic probe only after this final stack is assembled.
+        // N/M 探针会替换先前的初始物品栈，因此要等最终物品栈组装完成后
+        // 再执行数据驱动的弹道探针。
         SpecialInlayPolicy.write(stack.getOrCreateTag(), java.util.List.of("armor_piercer"));
         seedProbeAmmo(stack, ammoId);
         stack.getOrCreateTag().putBoolean(MODULES_READY, true);
@@ -336,16 +336,16 @@ public final class DevServerAutomation {
         openWorkbenchForRuntimeVerification(player);
     }
 
-    /** Creates one deterministic living target for the dev-only damage smoke test. */
+    /** 为开发伤害冒烟测试创建一个确定性的生物目标。 */
     private static void ensureDamageProbeTarget(net.minecraft.world.entity.player.Player player) {
         if (!(player instanceof ServerPlayer serverPlayer)
                 || DEV_DAMAGE_TARGETS.containsKey(player)
                 || !(serverPlayer.level() instanceof net.minecraft.server.level.ServerLevel level)) {
             return;
         }
-        // Isolated audit saves can retain entities from an earlier JVM run. Remove
-        // only our own tagged probe targets before creating the current target so
-        // stale fire/health events cannot be mistaken for this run's shot.
+        // 隔离审计存档可能保留先前 JVM 运行留下的实体。创建当前目标前，
+        // 仅移除带有本探针标记的目标，避免过期的火焰/生命值事件
+        // 被误认为本次射击产生。
         level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
                         serverPlayer.getBoundingBox().inflate(64.0),
                         entity -> entity.getTags().contains("taczintetra_dev_damage_target"))
@@ -354,24 +354,24 @@ public final class DevServerAutomation {
                             entity.getUUID(), entity.getType());
                     entity.discard();
                 });
-        // Use a large living hitbox for the dev-only ballistic probe so a valid
-        // projectile cannot miss solely because a tiny mob hitbox was grazed.
+        // 开发用弹道探针使用较大的生物碰撞箱，避免有效弹丸
+        // 仅因擦过小型生物碰撞箱而被判定为未命中。
         var target = net.minecraft.world.entity.EntityType.ZOMBIE.create(level);
         if (target == null) return;
         var look = serverPlayer.getLookAngle().normalize();
-        // Position the golem's body on the aim ray. The old feet-at-eye placement
-        // put the whole hitbox above the downward ballistic arc in the dev smoke test.
-        // Keep the floating dev target above the floor; otherwise the audit world
-        // can add unrelated in-wall damage events to the projectile sample.
+        // 将傀儡身体放在瞄准射线上。旧的“脚部与视线同高”摆放方式，
+        // 会让整个碰撞箱高于开发冒烟测试中的向下弹道弧线。
+        // 让悬空的开发目标保持在地面上方；否则审计世界会产生与弹丸样本无关的
+        // 撞墙伤害事件。
         target.setPos(serverPlayer.getEyePosition().add(look.scale(1.5)));
         target.setNoAi(true);
         target.setNoGravity(true);
         target.setSilent(true);
         target.noPhysics = true;
-        // Development-only armor comparison target. The previous clean-golem
-        // run is retained in task.md as the unarmored baseline; this run uses
-        // a full diamond set so armor-ignore can be observed at the real hit
-        // and damage-event boundary.
+        // 仅供开发使用的护甲对比目标。此前未穿护甲的傀儡基准
+        // 记录在 task.md 中；本次为傀儡装备整套钻石盔甲，
+        // 以便在真实命中和伤害事件处理环节观察忽略护甲的行为。
+
         target.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,
                 new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_HELMET));
         target.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,
@@ -386,9 +386,9 @@ public final class DevServerAutomation {
         target.setDropChance(net.minecraft.world.entity.EquipmentSlot.FEET, 0.0f);
         target.addTag("taczintetra_dev_damage_target");
         level.addFreshEntity(target);
-        // Some vanilla mob spawn paths normalize equipment during insertion;
-        // publish the deterministic armor set once more after the entity is
-        // live so the recorded armor value reflects the actual hit target.
+        // 部分原版生物生成流程会在加入世界时规范化装备；
+        // 因此实体正式加入世界后再次设置确定的护甲套装，
+        // 确保记录的护甲值对应实际受击目标。
         target.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD,
                 new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND_HELMET));
         target.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST,
@@ -408,7 +408,7 @@ public final class DevServerAutomation {
                 target.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET).getItem(), target.position());
     }
 
-    /** Resolves and assembles the real starter recipe through Minecraft's recipe manager. */
+    /** 通过 Minecraft 配方管理器解析并合成真实的初始配方。 */
     private static void probeConfiguredStarterRecipe(net.minecraft.world.entity.player.Player player) {
         if (!(player instanceof ServerPlayer serverPlayer)
                 || player.getPersistentData().getBoolean(STARTER_RECIPE_PROBE)) return;
@@ -434,7 +434,7 @@ public final class DevServerAutomation {
         player.getPersistentData().putBoolean(STARTER_RECIPE_PROBE, true);
     }
 
-    /** Keep large probe NBT server-side; client command packets are capped at 256 chars. */
+    /** 将较大的探针 NBT 保留在服务端；客户端命令数据包上限为 256 个字符。 */
     private static void seedProbeAmmo(ItemStack stack, String ammoId) {
         var tag = stack.getOrCreateTag();
         tag.putInt("taczintetra_ammo", 15);
@@ -448,9 +448,9 @@ public final class DevServerAutomation {
     }
 
     /**
-     * The isolated smoke test has no reliable console input channel. In dev
-     * automation only, a changed taczintetra.json triggers the same server reload
-     * pipeline as the /reload command and leaves an auditable log trail.
+     * 隔离冒烟测试没有可靠的控制台输入通道。仅在开发自动化中，
+     * 检测到 taczintetra.json 发生变化时，会执行与 /reload 命令相同的服务端重载流程，
+     * 并留下可审计的日志记录。
      */
     private static void observeDevConfigChange(net.minecraft.world.entity.player.Player player) {
         if (devModuleConfigReloadPending || !(player instanceof ServerPlayer serverPlayer)) return;
@@ -486,9 +486,9 @@ public final class DevServerAutomation {
     }
 
     /**
-     * A development save keeps persistent probe markers between launches. The
-     * reset is therefore scoped to this JVM process, not stored in the save:
-     * every fresh isolated window exercises the real workbench lifecycle once.
+     * 开发存档会在多次启动之间保留探针标记。因此重置操作
+     * 只作用于当前 JVM 进程，不写入存档：
+     * 每次新建隔离窗口时都会真实执行一次工作台生命周期。
      */
     private static void resetStaleProbeState(net.minecraft.world.entity.player.Player player) {
         if (devResetDone) return;
@@ -512,14 +512,14 @@ public final class DevServerAutomation {
         LOGGER.info("TaCZinTetra dev automation reset stale probe markers for a fresh workbench lifecycle");
     }
 
-    /** Confirms configured special-inlay IDs are filtered from the real gun NBT. */
+    /** 确认真实枪械 NBT 中已过滤配置的特殊嵌片 ID。 */
     private static void probeSpecialInlays(net.minecraft.world.entity.player.Player player, ItemStack stack) {
         var data = player.getPersistentData();
         if (data.getBoolean(SPECIAL_INLAY_PROBE)) return;
         SpecialInlayPolicy.write(stack.getOrCreateTag(), java.util.List.of("armor_piercer", "taczintetra:unknown"));
-        // The probe mutates the logical-server stack after the initial module
-        // packet. Re-publish the complete stack so the client/TaCZ shot path
-        // receives the same special-inlay NBT instead of an older copy.
+        // 初始模块数据包发出后，探针会修改逻辑服务端物品栈。
+        // 重新发布完整物品栈，确保客户端/TaCZ 射击流程
+        // 收到相同的特殊嵌片 NBT，而不是旧副本。
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack.copy());
         player.inventoryMenu.broadcastChanges();
         player.containerMenu.broadcastChanges();
@@ -592,9 +592,9 @@ public final class DevServerAutomation {
     }
 
     /**
-     * Exercises the ordinary server menu path used by vanilla chests. This is
-     * development-only and invokes the real AbstractContainerMenu.clicked
-     * entrypoint so the mixin's carried-resource insertion path is observable.
+     * 测试原版箱子使用的常规服务端菜单流程。此流程
+     * 仅供开发使用，并调用真实的 AbstractContainerMenu.clicked
+     * 入口，以便观察 mixin 的携带资源插入逻辑。
      */
     private static void probeStandardContainerInsertion(ServerPlayer player, ItemStack sourceGun) {
         var data = player.getPersistentData();
@@ -630,10 +630,10 @@ public final class DevServerAutomation {
             LOGGER.warn("TaCZinTetra dev standard container insertion skipped: menu={}",
                     player.containerMenu.getClass().getSimpleName());
         }
-        // This probe opens a real client menu. Close it before the optional
-        // Sophisticated probe opens another menu; otherwise multiple
-        // NetworkHooks.openScreen packets are queued in one server tick and
-        // the later backpack context can be checked against stale inventory.
+        // 此探针会打开真实的客户端菜单。运行可选探针前应先关闭该菜单，
+        // 否则同一服务端 tick 内会排入多个
+        // NetworkHooks.openScreen 数据包，
+        // 后续背包上下文可能会基于过期物品栏进行校验。
         if (player.containerMenu != player.inventoryMenu) {
             player.closeContainer();
         }
@@ -641,8 +641,8 @@ public final class DevServerAutomation {
     }
 
     /**
-     * Exercises the real player InventoryMenu path and restores the hotbar and
-     * carried stacks before returning. This is not an addon-container probe.
+     * 测试真实玩家 InventoryMenu 流程，并在返回前恢复快捷栏与
+     * 携带物品栈。此测试不针对附属模组容器。
      */
     private static void probePlayerInventoryInsertion(ServerPlayer player, ItemStack sourceGun) {
         var data = player.getPersistentData();
@@ -682,9 +682,9 @@ public final class DevServerAutomation {
     }
 
     /**
-     * Opens a real Sophisticated Backpacks item menu when that optional mod is
-     * present. Registry lookup keeps the core artifact free of an addon hard
-     * dependency; the probe is development-only and uses a disposable stack.
+     * 若安装了可选模组 Sophisticated Backpacks，则打开真实的背包物品菜单。
+     * 通过注册表查询避免核心制品对附属模组产生硬依赖；
+     * 此探针仅供开发使用，并使用一次性物品栈。
      */
     private static void probeSophisticatedBackpackInsertion(ServerPlayer player, ItemStack sourceGun) {
         var data = player.getPersistentData();
@@ -714,10 +714,10 @@ public final class DevServerAutomation {
         ItemStack originalOffhand = player.getOffhandItem().copy();
         ItemStack backpackStack = new ItemStack(backpack);
         try {
-            // Let the normal client interaction packet open the menu. A direct
-            // server-side Item#use call opens the server menu, but the client
-            // then reconstructs BackpackContext before its synchronized stack
-            // has the capability, producing a false slot-wrapper error.
+            // 让正常的客户端交互数据包打开菜单。直接调用服务端 Item#use
+            // 虽然会打开服务端菜单，但客户端会在同步物品栈
+            // 获得能力数据之前重建 BackpackContext，
+            // 从而产生错误的槽位包装器报错。
             player.getInventory().setItem(selectedIndex, backpackStack);
             player.getInventory().selected = selectedIndex;
             player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, backpackStack);
@@ -820,7 +820,7 @@ public final class DevServerAutomation {
         player.inventoryMenu.broadcastChanges();
     }
 
-    /** Exercises the optional addon capability bridge without loading addon classes. */
+    /** 测试可选附属能力桥接，不加载附属模组类。 */
     private static void probeAddonCapability(ServerPlayer player) {
         var data = player.getPersistentData();
         if (data.getBoolean(ADDON_CAPABILITY_PROBE)) return;
@@ -844,10 +844,10 @@ public final class DevServerAutomation {
         if (player.getPersistentData().getBoolean(WORKBENCH_OPENED)) return;
         int openDelay = player.getPersistentData().getInt(WORKBENCH_OPEN_DELAY);
         if (openDelay == 0) {
-            // Let the preceding holosphere probe finish and close its client
-            // screen before sending the server menu-open packet. Otherwise a
-            // valid WorkbenchTile can open server-side while the client still
-            // owns HoloGui, and no WorkbenchScreen is constructed.
+            // 等待前面的全息球探针完成并关闭客户端界面，
+            // 再发送服务端打开菜单的数据包。否则
+            // WorkbenchTile 可能已在服务端打开，而客户端仍显示 HoloGui，
+            // 因而不会创建 WorkbenchScreen。
             player.getPersistentData().putInt(WORKBENCH_OPEN_DELAY, 40);
             return;
         }
@@ -872,8 +872,8 @@ public final class DevServerAutomation {
         if (player.level().getBlockEntity(position) instanceof MenuProvider provider
                 && player instanceof ServerPlayer serverPlayer) {
             prepareWorkbenchGuiProbe((WorkbenchTile) provider, serverPlayer, player.getMainHandItem());
-            // WorkbenchContainer's MenuType factory reads the block position from
-            // the extra buffer; the generic openMenu(provider) path sends null.
+            // WorkbenchContainer 的 MenuType 工厂会从额外数据缓冲区读取方块位置；
+            // 通用的 openMenu(provider) 流程会发送 null。
             NetworkHooks.openScreen(serverPlayer, provider, position);
             player.getPersistentData().putBoolean(WORKBENCH_OPENED, true);
             player.getPersistentData().putInt(WORKBENCH_GUI_PENDING, 80);
@@ -930,9 +930,9 @@ public final class DevServerAutomation {
     }
 
     /**
-     * Exercises Tetra's real handler/schematic/craft path with a clean gun copy.
-     * This is deliberately development-only; production gameplay never bypasses
-     * the normal Workbench or Holo workbench UI.
+     * 使用干净的枪械副本测试 Tetra 的真实处理器、蓝图和制作流程。
+     * 此流程仅供开发使用；正式游戏不会绕过
+     * 常规工作台或全息工作台界面。
      */
     private static void craftBodyThroughWorkbench(WorkbenchTile workbench, ServerPlayer player, ItemStack heldGun) {
         if (player.getPersistentData().getBoolean(WORKBENCH_CRAFTED)
@@ -1003,7 +1003,7 @@ public final class DevServerAutomation {
         });
     }
 
-    /** Checks every configured repair agent against a damaged copy at Tetra's schematic boundary. */
+    /** 在 Tetra 蓝图处理边界处，使用受损副本逐一检查已配置的修复代理。 */
     private static void probeRepairMaterialMatrix(WorkbenchTile workbench, ServerPlayer player,
                                                   ItemStackHandler handler, ModularGunItem gun,
                                                   ItemStack repaired, UpgradeSchematic repairSchematic) {
@@ -1038,7 +1038,7 @@ public final class DevServerAutomation {
         data.putBoolean(REPAIR_MATERIAL_MATRIX_PROBE, true);
     }
 
-    /** Confirms the configured semi-finished-only rule at the real workbench boundary. */
+    /** 在真实工作台边界验证“仅半成品”配置规则。 */
     private static void probeRawMaterialRejection(WorkbenchTile workbench, ServerPlayer player,
                                                    ItemStackHandler handler, ModularGunItem gun,
                                                    ItemStack repaired) {
@@ -1070,7 +1070,7 @@ public final class DevServerAutomation {
         data.putBoolean(RAW_MATERIAL_REJECTION_PROBE, true);
     }
 
-    /** Confirms Tetra's broken state is observable without deleting the stack. */
+    /** 确认可以观察到 Tetra 的损坏状态，同时不删除物品栈。 */
     private static void probeBrokenState(ServerPlayer player, ModularGunItem gun, ItemStack repaired) {
         var data = player.getPersistentData();
         if (data.getBoolean(BROKEN_PROBE) || repaired.isEmpty()) return;
@@ -1082,7 +1082,7 @@ public final class DevServerAutomation {
         data.putBoolean(BROKEN_PROBE, true);
     }
 
-    /** Exercises Tetra's native enchanted-book schematic against the real gun stack. */
+    /** 使用真实枪械物品栈测试 Tetra 原生附魔书蓝图。 */
     private static void probeTetraEnchantments(WorkbenchTile workbench, ServerPlayer player,
                                                 ItemStackHandler handler, ModularGunItem gun,
                                                 ItemStack repaired) {
@@ -1094,9 +1094,9 @@ public final class DevServerAutomation {
             data.putBoolean(ENCHANTMENT_PROBE, true);
             return;
         }
-        // Iron deliberately has zero Tetra magic capacity in the default catalog;
-        // use a netherite copy here so this probe tests the enchantment policy and
-        // native Tetra settlement independently of material capacity.
+        // 默认目录中铁的 Tetra 魔力容量刻意设为零；
+        // 此处改用下界合金副本，使探针独立测试附魔策略
+        // 和 Tetra 原生结算逻辑，不受材料容量影响。
         ItemStack enchantTarget = new ItemStack(gun);
         se.mickelus.tetra.items.modular.IModularItem.putModuleInSlot(
                 enchantTarget, GunModuleSlots.BODY, "taczintetra/body/rifle", "taczintetra/netherite/");
@@ -1127,10 +1127,10 @@ public final class DevServerAutomation {
                 try {
                     workbench.craft(player);
                 } catch (RuntimeException exception) {
-                    // Tetra 6.17 may execute a destabilization explosion with a
-                    // null ExplosionInteraction during the workbench bonus path.
-                    // Keep the server alive and use the same native schematic's
-                    // settlement method without that optional bonus pipeline.
+                    // Tetra 6.17 可能在工作台奖励流程中
+                    // 使用空值 ExplosionInteraction 执行不稳定爆炸。
+                    // 为保持服务端运行，并继续使用同一原生蓝图的
+                    // 结算方法，此处不经过可选奖励流程。
                     LOGGER.warn("TaCZinTetra dev enchantment workbench bonus failed; applying native schematic directly: {}",
                             exception.toString());
                     ItemStack fallback = schematic.applyUpgrade(current, new ItemStack[]{book}, true,

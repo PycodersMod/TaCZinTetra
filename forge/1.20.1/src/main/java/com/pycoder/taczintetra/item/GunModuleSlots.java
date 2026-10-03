@@ -1,6 +1,6 @@
 package com.pycoder.taczintetra.item;
 
-/** Stable schema keys shared by the item root and datapack module definitions. */
+/** 供物品主体与数据包模块定义共同使用的稳定 schema 键。 */
 public final class GunModuleSlots {
     public static final String BODY = "taczintetra/body";
     public static final String MAGAZINE = "taczintetra/magazine";

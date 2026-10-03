@@ -11,7 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import com.pycoder.taczintetra.network.StackIdentity;
 
-/** Keeps TaCZ's property cache valid after a Tetra stack enters the active hand. */
+/** Tetra 物品栈进入当前手部后，确保 TaCZ 属性缓存有效。 */
 public final class GunCacheSynchronizer {
     private static final Map<LivingEntity, CacheBinding> BINDINGS = new WeakHashMap<>();
 
@@ -24,8 +24,8 @@ public final class GunCacheSynchronizer {
         CacheBinding binding = BINDINGS.get(entity);
         ItemStack previousStack = binding == null ? null : binding.stack();
         int identity = StackIdentity.of(stack);
-        // TaCZ exposes one operator cache per entity, so a non-null cache is
-        // not proof that it belongs to this hand's current modular stack.
+        // TaCZ 为每个实体提供一个操作缓存，因此缓存非空
+        // 缓存非空也不能证明它属于当前手部的模组物品栈。
         if (operator.getCacheProperty() != null
                 && previousStack == stack
                 && binding.identity() == identity) return;

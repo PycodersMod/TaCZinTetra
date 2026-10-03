@@ -2,7 +2,7 @@ package com.pycoder.taczintetra.network;
 
 import com.pycoder.taczintetra.logic.ReloadStartPolicy;
 
-/** Server-side policy core; the runtime adapter supplies authoritative player state. */
+/** 服务端策略核心；运行时适配器提供权威玩家状态。 */
 public final class ReloadIntentPolicy {
     private ReloadIntentPolicy() {
     }

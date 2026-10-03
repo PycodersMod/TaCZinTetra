@@ -28,7 +28,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 
-/** Client-only input adapter; ordinary TaCZ guns are left to TaCZ itself. */
+/** 仅限客户端使用的输入适配器；普通 TaCZ 枪械仍由 TaCZ 自身处理。 */
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID, value = Dist.CLIENT)
 public final class ClientReloadInputHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -60,8 +60,8 @@ public final class ClientReloadInputHandler {
                 LOGGER.info("TaCZinTetra dev dual-hand RMB intercepted: action={}, offhandShot={}",
                         event.getAction(), event.getAction() == GLFW.GLFW_PRESS);
             }
-            // Only the Pre phase is cancellable. Keep native TaCZ from seeing
-            // the same offhand click after the custom route accepted it.
+            // 只有 Pre 阶段可以取消。自定义处理已接受副手点击后，
+            // 不要再让 TaCZ 原生流程收到同一次点击。
             event.setCanceled(true);
         }
     }
@@ -110,8 +110,8 @@ public final class ClientReloadInputHandler {
             return;
         }
 
-        // Let TaCZ own main-hand reload. Sending a custom packet as well would
-        // create two competing reload paths for one physical key press.
+        // 主手换弹交由 TaCZ 处理。若同时发送自定义数据包，
+        // 一次实体按键就会触发两条互相竞争的换弹流程。
         if (!decision.routeReloadToOffHand()) return;
 
         ItemStack active = decision.routeReloadToOffHand() ? offHand : main;

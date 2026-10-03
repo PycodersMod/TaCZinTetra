@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
-/** Client intent; the server validates the current hand before later settlement. */
+/** 客户端意图；服务端会在后续结算前验证当前手部状态。 */
 public record ReloadIntentMessage(boolean offHand, boolean singleBatch,
                                   int stackIdentity, int sequence) {
     private static final String FILL_MODE = "taczintetra_reload_fill";
