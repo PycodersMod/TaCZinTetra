@@ -24,14 +24,16 @@ public final class ReloadRuntimeSettlementService {
     private static final String FILL_MODE = "taczintetra_reload_fill";
     private static final String RELOAD_STARTED_AT = "taczintetra_reload_started_at";
     private static final String RELOAD_STATE = "taczintetra_reload_state";
+    public static final String RELOAD_AMMO_BEFORE = "taczintetra_reload_ammo_before";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private ReloadRuntimeSettlementService() { }
 
-    public static void markPending(ItemStack stack, boolean fillMode) {
+    public static void markPending(ItemStack stack, boolean fillMode, int ammoBeforeReload) {
         if (stack != null && !stack.isEmpty()) {
             stack.getOrCreateTag().putBoolean(PENDING, true);
             stack.getOrCreateTag().putBoolean(FILL_MODE, fillMode);
+            stack.getOrCreateTag().putInt(RELOAD_AMMO_BEFORE, Math.max(0, ammoBeforeReload));
         }
     }
 
@@ -49,6 +51,7 @@ public final class ReloadRuntimeSettlementService {
         var tag = stack.getOrCreateTag();
         tag.remove(RELOAD_STARTED_AT);
         tag.remove(RELOAD_STATE);
+        tag.remove(RELOAD_AMMO_BEFORE);
     }
 
     public static boolean isPending(ItemStack stack) {

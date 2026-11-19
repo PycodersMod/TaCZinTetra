@@ -73,6 +73,7 @@ dependencies {
     implementation(fg.deobf("mutil:mutil:1.20.1-6.3.0"))
     implementation(fg.deobf("tetra:tetra:1.20.1-6.17.0"))
     implementation(fg.deobf("tacz:tacz:1.20.1-1.1.8-hotfix"))
+    compileOnly("io.github.llamalad7:mixinextras-common:0.5.4")
     // Optional target-pack integrations are development-only. ForgeGradle must
     // remap them through the same official -> MCP pipeline as the core mods;
     // manual constant replacement is not sufficient for runtime bridge methods.
@@ -139,10 +140,40 @@ minecraft {
                     ?.let { property("taczintetra.dev_automation_token", it) }
                 if (providers.gradleProperty("titLanHost").orNull == "true") {
                     property("taczintetra.dev_lan_host", "true")
+                    property("taczintetra.dev_lan_host_username", pycodersUsername)
                 }
                 if (providers.gradleProperty("titHoldHolo").orNull == "true") {
                     property("taczintetra.dev_hold_holo", "true")
                 }
+                if (providers.gradleProperty("titF06ZeroAmmoProbe").orNull == "true") {
+                    property("taczintetra.dev_f06_zero_ammo_probe", "true")
+                }
+                if (providers.gradleProperty("titF06ReloadInterruptProbe").orNull == "true") {
+                    property("taczintetra.dev_f06_reload_interrupt_probe", "true")
+                }
+                if (providers.gradleProperty("titNativeReloadKeyProbe").orNull == "true") {
+                    property("taczintetra.dev_native_reload_key_probe", "true")
+                }
+                if (providers.gradleProperty("titDualHandProbe").orNull == "true") {
+                    property("taczintetra.dev_dual_hand_probe", "true")
+                    if (providers.gradleProperty("titDualHandProbeWaitForGuest").orNull == "true") {
+                        property("taczintetra.dev_dual_hand_probe_wait_for_guest", "true")
+                    }
+                }
+            }
+            if (providers.gradleProperty("titF06LanObserver").orNull == "true") {
+                property("taczintetra.dev_f06_lan_observer", "true")
+                property("taczintetra.dev_f06_lan_host_username",
+                    providers.gradleProperty("titF06LanObserverHostUsername").orElse("Dev").get())
+            }
+            if (providers.gradleProperty("titSurvivalPartCraftProbe").orNull == "true") {
+                property("taczintetra.dev_survival_recipe_craft", "true")
+            }
+            if (providers.gradleProperty("titStarterPistolSurvivalProbe").orNull == "true") {
+                property("taczintetra.dev_survival_starter_pistol_recipe_craft", "true")
+            }
+            if (providers.gradleProperty("titSurvivalTetraWorkbenchProbe").orNull == "true") {
+                property("taczintetra.dev_survival_tetra_workbench_probe", "true")
             }
             mods {
                 create(modId) {
@@ -155,9 +186,26 @@ minecraft {
             workingDirectory(titRunDir)
             pycodersJavaArgs.forEach { jvmArg(it) }
             pycodersGameArgs.forEach { args(it) }
+            arg("-mixin.config=taczintetra.mixins.json")
             arg("nogui")
             property("forge.logging.markers", "REGISTRIES")
             property("forge.logging.console.level", "debug")
+            property("mixin.env.remapRefMap", "true")
+            property("mixin.env.refMapRemappingFile", refMapRemappingFile.absolutePath)
+            mods {
+                create(modId) {
+                    source(sourceSets.main.get())
+                }
+            }
+        }
+
+        create("gameTestServer") {
+            workingDirectory(titRunDir)
+            pycodersJavaArgs.forEach { jvmArg(it) }
+            arg("-mixin.config=taczintetra.mixins.json")
+            property("forge.logging.markers", "REGISTRIES")
+            property("forge.logging.console.level", "debug")
+            property("forge.enabledGameTestNamespaces", modId)
             property("mixin.env.remapRefMap", "true")
             property("mixin.env.refMapRemappingFile", refMapRemappingFile.absolutePath)
             mods {
@@ -194,9 +242,17 @@ val prepareDevMods = tasks.register<Copy>("prepareDevMods") {
     rename { name -> name.replace("_mapped_official_1.20.1", "") }
 }
 
+val prepareGameTestStructures = tasks.register<Copy>("prepareGameTestStructures") {
+    from(layout.projectDirectory.dir("gameteststructures"))
+    into(titRunDir.resolve("gameteststructures"))
+}
+
 tasks.configureEach {
-    if (name in setOf("runClient", "runServer", "runData")) {
+    if (name in setOf("runClient", "runServer", "runGameTestServer", "runData")) {
         dependsOn(prepareDevMods)
+    }
+    if (name == "runGameTestServer") {
+        dependsOn(prepareGameTestStructures)
     }
 }
 

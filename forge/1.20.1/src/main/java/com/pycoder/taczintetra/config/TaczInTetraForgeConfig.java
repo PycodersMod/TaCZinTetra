@@ -19,7 +19,6 @@ public final class TaczInTetraForgeConfig {
     public static final ForgeConfigSpec.ConfigValue<String> INITIAL_BODY_MATERIAL;
     public static final ForgeConfigSpec.ConfigValue<String> INITIAL_MAGAZINE_MATERIAL;
     public static final ForgeConfigSpec.ConfigValue<java.util.List<? extends String>> INITIAL_RECIPE;
-    public static final ForgeConfigSpec.BooleanValue FORCE_DOT_CROSSHAIR;
     public static final ForgeConfigSpec.BooleanValue DEBUG_LOGGING;
 
     static {
@@ -44,9 +43,6 @@ public final class TaczInTetraForgeConfig {
         INITIAL_BODY_MATERIAL = b.define("body_material", "wood");
         INITIAL_MAGAZINE_MATERIAL = b.define("magazine_material", "wood");
         INITIAL_RECIPE = b.defineList("recipe", java.util.List.of("#minecraft:planks", "#minecraft:planks", "#minecraft:planks", "#minecraft:planks", "minecraft:stick", "", "#minecraft:wooden_slabs", "", ""), value -> value instanceof String);
-        b.pop();
-        b.push("client");
-        FORCE_DOT_CROSSHAIR = b.define("force_dot_crosshair_for_modular_gun", true);
         b.pop();
         b.push("debug");
         DEBUG_LOGGING = b.define("logging", false);

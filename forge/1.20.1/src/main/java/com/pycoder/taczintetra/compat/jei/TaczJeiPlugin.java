@@ -8,7 +8,6 @@ import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.runtime.IJeiRuntime;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -86,11 +85,15 @@ public final class TaczJeiPlugin implements IModPlugin {
         for (Recipe<?> recipe : recipes) {
             ResourceLocation id = recipe.getId();
             ResourceLocation resultId = null;
-            try {
-                ItemStack result = recipe.getResultItem(RegistryAccess.EMPTY);
-                if (!result.isEmpty()) resultId = BuiltInRegistries.ITEM.getKey(result.getItem());
-            } catch (RuntimeException ex) {
-                LOGGER.warn("Unable to inspect JEI recipe result for TaCZ restriction: {}", id, ex);
+            boolean hideByRecipeId = NativeTaczRestrictionService.shouldHideFromJei(id, null);
+            if (!hideByRecipeId) {
+                if (NativeTaczRestrictionService.requiresDynamicRegistryForResult(recipe)) continue;
+                try {
+                    ItemStack result = recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY);
+                    if (!result.isEmpty()) resultId = BuiltInRegistries.ITEM.getKey(result.getItem());
+                } catch (RuntimeException ex) {
+                    LOGGER.warn("Unable to inspect JEI recipe result for TaCZ restriction: {}", id, ex);
+                }
             }
             if (!NativeTaczRestrictionService.shouldHideFromJei(id, resultId)) continue;
             List<RecipeType<?>> matchingTypes = registeredTypes.stream()

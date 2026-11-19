@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "taczintetra:physical_part/body",
+  "pattern": [
+    "PPP",
+    "P P",
+    "S S"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "taczintetra:iron_body",
+    "count": 1
+  }
+}

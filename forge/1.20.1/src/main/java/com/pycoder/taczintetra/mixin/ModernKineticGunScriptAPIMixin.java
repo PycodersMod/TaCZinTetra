@@ -3,6 +3,11 @@ package com.pycoder.taczintetra.mixin;
 import com.tacz.guns.api.item.gun.AbstractGunItem;
 import com.tacz.guns.item.ModernKineticGunScriptAPI;
 import com.tacz.guns.init.ModItems;
+import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.resource.index.CommonGunIndex;
+import com.tacz.guns.api.util.LuaNbtAccessor;
+import net.minecraft.resources.ResourceLocation;
+import com.pycoder.taczintetra.item.ModularGunItem;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,12 +24,22 @@ public abstract class ModernKineticGunScriptAPIMixin {
     @Shadow(remap = false) private AbstractGunItem abstractGunItem;
     @Shadow(remap = false) private net.minecraft.world.entity.LivingEntity shooter;
     @Shadow(remap = false) private net.minecraft.world.item.ItemStack itemStack;
+    @Shadow(remap = false) private CommonGunIndex gunIndex;
+    @Shadow(remap = false) private ResourceLocation gunId;
+    @Shadow(remap = false) private ResourceLocation gunDisplayId;
+    @Shadow(remap = false) private LuaNbtAccessor nbtUtil;
 
     @Inject(method = "setItemStack", at = @At("TAIL"), remap = false)
     private void taczintetra$useRegisteredDelegate(CallbackInfo ci) {
-        if (abstractGunItem == null) {
-            abstractGunItem = ModItems.MODERN_KINETIC_GUN.get();
-        }
+        if (itemStack == null || !(itemStack.getItem() instanceof ModularGunItem modularGun)) return;
+        // TaCZ initGunItem() only accepts AbstractGunItem, so it clears its
+        // index for Tetra-backed stacks. Reproduce its exact field binding
+        // through TaCZ's own registry and NBT APIs for this one item type.
+        abstractGunItem = ModItems.MODERN_KINETIC_GUN.get();
+        gunId = modularGun.getGunId(itemStack);
+        gunDisplayId = modularGun.getGunDisplayId(itemStack);
+        gunIndex = TimelessAPI.getCommonGunIndex(gunId).orElse(null);
+        nbtUtil = itemStack.hasTag() ? new LuaNbtAccessor(itemStack.getTag()) : null;
     }
 
     @Inject(method = "shootOnce", at = @At("HEAD"), remap = false)

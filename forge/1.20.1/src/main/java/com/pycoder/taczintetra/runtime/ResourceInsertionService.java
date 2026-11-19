@@ -9,6 +9,7 @@ import com.pycoder.taczintetra.logic.ResourceNbtAdapter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import com.tacz.guns.api.item.IAmmo;
 
 /** 服务端单向资源插入；不提供从枪械向背包返还资源的操作。 */
 public final class ResourceInsertionService {
@@ -39,12 +40,11 @@ public final class ResourceInsertionService {
             return 0;
         }
         String resourceId = key.toString();
-        if ("tacz:ammo".equals(resourceId)) {
-            String ammoId = resource.getOrCreateTag().getString("AmmoId");
-            ResourceLocation parsedAmmoId = ResourceLocation.tryParse(ammoId);
-            if (parsedAmmoId != null) {
-                resourceId = parsedAmmoId.toString();
-            }
+        IAmmo taCZAmmo = IAmmo.getIAmmoOrNull(resource);
+        if (taCZAmmo != null) {
+            ResourceLocation ammoId = taCZAmmo.getAmmoId(resource);
+            if (ammoId == null) return 0;
+            resourceId = ammoId.toString();
         }
         var recipe = ConfiguredAmmoRecipeResolver.select(TaCZinTetra.MODULE_CONFIG, modularGun, gun);
         if (recipe == null || !recipe.cost().containsKey(resourceId)) {

@@ -9,6 +9,7 @@
   "slot": "tacz:gun/slot/m1911",
   "animation": "tacz:m1911",
   "use_default_animation": "pistol",
+  "show_crosshair": true,
   "player_animator_3rd": "tacz:pistol_default.player_animation",
   "offhand_show": {
     "pos": [1, 19, 4],
@@ -33,6 +34,6 @@
     "texture": "tacz:flash/common_muzzle_flash",
     "scale": 0.65
   },
-  "iron_zoom": 1.0,
+  "iron_zoom": 1.67,
   "zoom_model_fov": 55
 }

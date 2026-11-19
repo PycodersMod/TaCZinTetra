@@ -19,9 +19,16 @@
     "SchematicRegistryMixin"
   ],
   "client": [
+    "ModularGunRefitScreenMixin",
+    "GunRefitScreenLifecycleMixin",
+    "OffhandReloadInputMixin",
+    "MainHandReloadInputMixin",
+    "ModularGunNativeAimMixin",
+    "TetraBlockProgressOverlayMixin",
+    "QuickPlayTraceMixin",
+    "MinecraftQuickPlayTraceMixin",
     "ThirdPersonOffhandRenderMixin",
-    "ThirdPersonHumanoidOffhandProbeMixin",
-    "RenderCrosshairMixin"
+    "ThirdPersonHumanoidOffhandProbeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

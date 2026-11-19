@@ -21,6 +21,16 @@ class ModularGunItemContractTest {
     }
 
     @Test
+    void modularGunUsesTaczNativeSwingSuppression() throws Exception {
+        String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"),
+                StandardCharsets.UTF_8);
+        int method = source.indexOf("boolean onEntitySwing(ItemStack stack, LivingEntity entity)");
+        assertTrue(method >= 0);
+        int bodyEnd = source.indexOf("}", method);
+        assertTrue(bodyEnd > method && source.substring(method, bodyEnd).contains("return true;"));
+    }
+
+    @Test
     void modularGunExposesRequiredNbtBackedGunStateMethods() throws Exception {
         for (String method : new String[]{"getGunId", "getCurrentAmmoCount", "setCurrentAmmoCount", "getFireMode", "hasBulletInBarrel", "getRPM", "getRepairMaterialCount"}) {
             assertTrue(hasItemStackMethod(method), method);
@@ -41,7 +51,8 @@ class ModularGunItemContractTest {
                 "src/main/java/com/pycoder/taczintetra/client/ModularGunTooltipHandler.java"),
                 StandardCharsets.UTF_8);
         assertTrue(source.contains("ItemTooltipEvent"));
-        assertTrue(source.contains("taczintetra_ammo"));
+        assertTrue(source.contains("GunCurrentAmmoCount"));
+        assertTrue(source.contains("DummyAmmo"));
         assertTrue(source.contains("resources"));
     }
 
@@ -80,6 +91,30 @@ class ModularGunItemContractTest {
         assertTrue(source.contains("revalidateRuntimeState(stack)"));
         assertTrue(source.contains("GunStateRevalidator.revalidate"));
         assertTrue(source.contains("ResourceNbtAdapter.write"));
+    }
+
+    @Test
+    void ammoWriteTraceIsOptInAndRecordsTheChangingStackAndCaller() throws Exception {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"),
+                StandardCharsets.UTF_8);
+        assertTrue(source.contains("taczintetra.dev_trace_ammo_writes"));
+        assertTrue(source.contains("NATIVE_AMMO_WRITE_TRACE"));
+        assertTrue(source.contains("before={}"));
+        assertTrue(source.contains("after={}"));
+        assertTrue(source.contains("StackWalker"));
+        assertTrue(source.contains("stackUuid={}"));
+    }
+
+    @Test
+    void ammoWriteTraceCoversUnmarkedAndRevalidationWrites() throws Exception {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"),
+                StandardCharsets.UTF_8);
+        assertTrue(!source.contains("NATIVE_AMMO_WRITE_TRACE && tag.getBoolean(\"taczintetra_dev_modules_ready\")"),
+                "native ammo writes must be traced even before the probe readiness marker appears");
+        assertTrue(source.contains("NATIVE_AMMO_REVALIDATE_WRITE_TRACE"),
+                "the direct TaCZ accessor write in revalidateRuntimeState must have its own trace");
     }
 
     @Test

@@ -2,12 +2,12 @@ package com.pycoder.taczintetra.mixin;
 
 import com.pycoder.taczintetra.TaCZinTetra;
 import com.pycoder.taczintetra.api.GunSourceAccessor;
-import com.pycoder.taczintetra.api.GunRuntimeEvent;
 import com.pycoder.taczintetra.config.TetraItemStackProfileResolver;
 import com.pycoder.taczintetra.logic.ConfiguredProjectilePolicy;
 import com.pycoder.taczintetra.item.GunModuleSlots;
 import com.pycoder.taczintetra.item.ModularGunItem;
 import com.tacz.guns.entity.EntityKineticBullet;
+import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.util.TacHitResult;
 import com.tacz.guns.resource.pojo.data.gun.BulletData;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
@@ -15,12 +15,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,8 +24,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 
-/** 仅对配置为原生爆炸行为的 TaCZ 子弹触发附属模组钩子。 */
+/** 将 Tetra 枪械实例属性桥接到 TaCZ 原生弹丸与属性回调。 */
 @Mixin(value = EntityKineticBullet.class, remap = false)
 public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
     @Unique
@@ -42,11 +41,15 @@ public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
     @Shadow private float friction;
     @Shadow private boolean igniteEntity;
     @Shadow private boolean igniteBlock;
-    @Shadow private float speed;
-    @Shadow private float distanceAmount;
-    @Shadow private float armorIgnore;
-    @Shadow private int pierce;
-    @Shadow private float knockback;
+
+    @WrapOperation(method = "<init>(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;ZLcom/tacz/guns/resource/pojo/data/gun/GunData;Lcom/tacz/guns/resource/pojo/data/gun/BulletData;)V",
+            at = @At(value = "INVOKE", target = "Lcom/tacz/guns/entity/EntityKineticBullet;modifyProperty(Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;"), remap = false)
+    private Object taczintetra$captureSourceGun(EntityKineticBullet instance, String propertyName, Class<?> type,
+                                                Object defaultValue, Operation<Object> original,
+                                                @Local(argsOnly = true) ItemStack gunStack) {
+        taczintetra$sourceGun = gunStack == null ? ItemStack.EMPTY : gunStack.copy();
+        return original.call(instance, propertyName, type, defaultValue);
+    }
 
     @Inject(method = "<init>(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;ZLcom/tacz/guns/resource/pojo/data/gun/GunData;Lcom/tacz/guns/resource/pojo/data/gun/BulletData;)V", at = @At("TAIL"), remap = false)
     private void taczintetra$applyConfiguredDamage(EntityType<?> type, Level level, LivingEntity owner,
@@ -54,7 +57,6 @@ public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
                                                     ResourceLocation gunDisplayId, ResourceLocation ammoId,
                                                     boolean tracer, GunData gunData, BulletData bulletData,
                                                     CallbackInfo ci) {
-        taczintetra$sourceGun = gunStack == null ? ItemStack.EMPTY : gunStack.copy();
         if (gunStack == null || !(gunStack.getItem() instanceof ModularGunItem modular)) {
             return;
         }
@@ -68,22 +70,6 @@ public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
         float configuredDamage = (float) profile.projectile().damage();
         if (Float.isFinite(configuredDamage) && configuredDamage > 0) {
             ((EntityKineticBullet) (Object) this).setShotDamageMultiplier(configuredDamage / baseDamage);
-        }
-        var projectile = profile.projectile();
-        if (Float.isFinite((float) projectile.velocity()) && projectile.velocity() > 0) {
-            speed *= (float) projectile.velocity();
-        }
-        if (Float.isFinite((float) projectile.range()) && projectile.range() > 0) {
-            distanceAmount *= (float) projectile.range();
-        }
-        if (Float.isFinite((float) projectile.armorIgnore())) {
-            armorIgnore = Math.max(0, Math.min(1, armorIgnore + (float) projectile.armorIgnore()));
-        }
-        if (projectile.pierce() > 0) {
-            pierce = Math.max(1, projectile.pierce());
-        }
-        if (Float.isFinite((float) projectile.knockback()) && projectile.knockback() > 0) {
-            knockback *= (float) projectile.knockback();
         }
         var modules = TetraItemStackProfileResolver.selectedModules(modular, gunStack,
                 GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
@@ -108,57 +94,28 @@ public abstract class EntityKineticBulletMixin implements GunSourceAccessor {
         }
         if (Boolean.getBoolean("taczintetra.dev_automation")) {
             com.mojang.logging.LogUtils.getLogger().info(
-                    "TaCZinTetra dev projectile profile bridge: specialInlays={}, tag={}, baseDamage={}, configuredDamage={}, multiplier={}, speed={}, range={}, armorIgnore={}, pierce={}, knockback={}",
+                    "TaCZinTetra dev projectile profile bridge: specialInlays={}, tag={}, baseDamage={}, configuredDamage={}, multiplier={}",
                     TetraItemStackProfileResolver.specialTraits(modular, gunStack), gunStack.getTag(),
-                    baseDamage, configuredDamage, configuredDamage / baseDamage, speed, distanceAmount,
-                    armorIgnore, pierce, knockback);
+                    baseDamage, configuredDamage, configuredDamage / baseDamage);
         }
     }
 
-    /**
-     * 将配置的弹丸伤害视为每次命中的伤害值。TaCZ
-     * 原生返回值已包含距离伤害曲线；若再将其作为乘数，
-     * JSON 伤害就会错误地依赖模板枪械。
-     */
-    @Inject(method = "getDamage(Lnet/minecraft/world/phys/Vec3;)F", at = @At("RETURN"),
-            cancellable = true, remap = false)
-    private void taczintetra$useConfiguredPerHitDamage(Vec3 hitPosition,
-                                                        CallbackInfoReturnable<Float> ci) {
-        ItemStack gunStack = sourceGun();
-        if (!(gunStack.getItem() instanceof ModularGunItem modular)) return;
-        var profile = TetraItemStackProfileResolver.tryResolve(modular, gunStack,
-                GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
-        if (profile == null) return;
-        float configuredDamage = (float) profile.projectile().damage();
-        if (Float.isFinite(configuredDamage) && configuredDamage > 0) {
-            ci.setReturnValue((float) profile.projectile().damage());
+    @Inject(method = "modifyProperty(Ljava/lang/String;Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/Object;",
+            at = @At("HEAD"), cancellable = true, remap = false)
+    private <T> void taczintetra$dispatchNativeProperty(String propertyName, Class<T> type, T defaultValue,
+                                                          CallbackInfoReturnable<T> cir) {
+        ItemStack source = taczintetra$sourceGun;
+        if (!(source.getItem() instanceof ModularGunItem gun)
+                || !(((EntityKineticBullet) (Object) this).getOwner() instanceof LivingEntity shooter)) {
+            return;
         }
+        var holder = IGunOperator.fromLivingEntity(shooter).getDataHolder();
+        cir.setReturnValue(gun.modifyProperty(holder, source, shooter, propertyName, type, defaultValue));
     }
 
     @Override
     public ItemStack sourceGun() {
         return taczintetra$sourceGun.isEmpty() ? ItemStack.EMPTY : taczintetra$sourceGun.copy();
-    }
-
-    @Inject(method = "onHitBlock", at = @At("HEAD"), cancellable = true)
-    private void taczintetra$explosionHit(BlockHitResult hit, Vec3 start, Vec3 end, CallbackInfo ci) {
-        Entity owner = ((Projectile) (Object) this).getOwner();
-        ItemStack sourceGun = sourceGun();
-        if (Boolean.getBoolean("taczintetra.dev_automation")
-                && owner instanceof LivingEntity actor
-                && sourceGun.getItem() instanceof ModularGunItem) {
-            com.mojang.logging.LogUtils.getLogger().info(
-                    "TaCZinTetra dev modular bullet block hit: block={}, location={}, start={}, end={}, projectileId={}",
-                    hit.getBlockPos(), hit.getLocation(), start, end, ((Entity) (Object) this).getId());
-        }
-        if (!explosion || !(owner instanceof LivingEntity actor)
-                || !(sourceGun.getItem() instanceof ModularGunItem)) {
-            return;
-        }
-        if (MinecraftForge.EVENT_BUS.post(new GunRuntimeEvent(
-                GunRuntimeEvent.Type.EXPLOSION_HIT, actor, sourceGun))) {
-            ci.cancel();
-        }
     }
 
     @Inject(method = "onHitEntity", at = @At("HEAD"), remap = false)

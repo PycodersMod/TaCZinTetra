@@ -14,4 +14,12 @@ class ReloadSequenceTest {
     void ordinarySequenceIncrements() {
         assertEquals(8, ReloadSequence.next(7));
     }
+
+    @Test
+    void sharedSequenceKeepsManualAndAutomatedReloadRequestsMonotonic() {
+        int first = ReloadSequence.next();
+        int second = ReloadSequence.next();
+
+        assertEquals(ReloadSequence.next(first), second);
+    }
 }

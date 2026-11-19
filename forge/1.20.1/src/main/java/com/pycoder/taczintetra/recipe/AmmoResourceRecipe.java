@@ -13,11 +13,10 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.level.Level;
+import com.tacz.guns.api.item.IAmmo;
 
 /** 数据驱动的无序配方，制作带有 AmmoId 标签的 TaCZ 弹药。 */
 public final class AmmoResourceRecipe implements CraftingRecipe {
-    private static final String AMMO_ID = "AmmoId";
-
     private final ShapelessRecipe delegate;
     private final String ammoId;
 
@@ -87,7 +86,13 @@ public final class AmmoResourceRecipe implements CraftingRecipe {
 
     private ItemStack result() {
         ItemStack result = delegate.getResultItem(RegistryAccess.EMPTY).copy();
-        result.getOrCreateTag().putString(AMMO_ID, ammoId);
+        IAmmo ammo = IAmmo.getIAmmoOrNull(result);
+        ResourceLocation parsed = ResourceLocation.tryParse(ammoId);
+        if (ammo == null || parsed == null) {
+            throw new IllegalStateException("Ammo resource recipe " + delegate.getId()
+                    + " must produce a TaCZ IAmmo stack and a valid ammo_id");
+        }
+        ammo.setAmmoId(result, parsed);
         return result;
     }
 }

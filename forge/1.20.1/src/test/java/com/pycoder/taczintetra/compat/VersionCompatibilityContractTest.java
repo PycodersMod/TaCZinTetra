@@ -14,7 +14,7 @@ class VersionCompatibilityContractTest {
     void metadataPinsTheVerifiedForgeAndIntegrationVersions() throws Exception {
         String properties = Files.readString(Path.of("gradle.properties"), StandardCharsets.UTF_8);
         String metadata = Files.readString(Path.of("src/main/resources/META-INF/mods.toml"), StandardCharsets.UTF_8);
-        assertTrue(properties.contains("forge_version=47.4.16"));
+        assertTrue(properties.contains("forge_version=47.4.23"));
         assertTrue(properties.contains("forge_version_range=[47,48)"));
         assertTrue(metadata.contains("versionRange=\"[6.17.0]\""));
         assertTrue(metadata.contains("versionRange=\"[1.1.8-hotfix]\""));

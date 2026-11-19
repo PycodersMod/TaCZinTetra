@@ -3,8 +3,9 @@ package com.pycoder.taczintetra.network;
 import com.pycoder.taczintetra.item.ModularGunItem;
 import com.pycoder.taczintetra.config.TetraItemStackProfileResolver;
 import com.pycoder.taczintetra.runtime.ReloadRuntimeCoordinator;
-import com.pycoder.taczintetra.logic.FireModePolicy;
+import com.pycoder.taczintetra.compat.ModularGunLifecycleAdapter;
 import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.item.gun.FireMode;
 import com.mojang.logging.LogUtils;
 import net.minecraft.network.FriendlyByteBuf;
@@ -60,10 +61,8 @@ public record FireModeIntentMessage(boolean offHand, int stackIdentity, int sequ
         if (gunIndex == null || gunIndex.getGunData() == null
                 || gunIndex.getGunData().getFireModeSet() == null
                 || gunIndex.getGunData().getFireModeSet().isEmpty()) return;
-        StackIdentity.ensureUniqueId(stack);
         LAST_SEQUENCE.put(sender, message.sequence());
-        gun.setFireMode(stack, FireModePolicy.next(gun.getFireMode(stack),
-                gunIndex.getGunData().getFireModeSet()));
+        ModularGunLifecycleAdapter.fireSelect(IGunOperator.fromLivingEntity(sender).getDataHolder(), stack);
         LOGGER.info("TaCZinTetra fire-mode intent applied: hand=OFF, sequence={}, mode={}",
                 message.sequence(), gun.getFireMode(stack));
     }

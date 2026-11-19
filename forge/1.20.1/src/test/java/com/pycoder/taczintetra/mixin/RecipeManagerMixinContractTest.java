@@ -22,4 +22,19 @@ class RecipeManagerMixinContractTest {
         assertTrue(source.contains("BuiltInRegistries.ITEM"));
         assertTrue(source.contains("shouldBlockNativeRecipe"));
     }
+
+    @Test
+    void registryDependentArmorTrimRecipesBypassEmptyRegistryResultInspection() throws Exception {
+        String source = Files.readString(
+                ROOT.resolve("com/pycoder/taczintetra/mixin/RecipeManagerMixin.java"),
+                StandardCharsets.UTF_8);
+        int guard = source.indexOf("requiresDynamicRegistryForResult(recipe)");
+        int resultInspection = source.indexOf("recipe.getResultItem(RegistryAccess.EMPTY)");
+
+        assertTrue(guard >= 0, "registry-dependent smithing trim recipes need a safe bypass");
+        assertTrue(resultInspection > guard,
+                "the trim recipe must bypass getResultItem(RegistryAccess.EMPTY)");
+        assertTrue(source.substring(guard, resultInspection).contains("original.accept(recipe)"),
+                "a trim recipe that cannot be inspected with empty registries must remain available");
+    }
 }

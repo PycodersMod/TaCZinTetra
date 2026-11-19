@@ -14,6 +14,11 @@ class ReloadIntentFactoryTest {
         assertFalse(singleIntent.offHand());
         assertTrue(singleIntent.singleBatch());
 
+        GunInputRouter.Decision dualMainHand = GunInputRouter.resolve(true, true, false, false, false);
+        ReloadIntentMessage mainHandIntent = ReloadIntentFactory.create(dualMainHand, 12, 5);
+        assertFalse(mainHandIntent.offHand());
+        assertTrue(mainHandIntent.singleBatch());
+
         GunInputRouter.Decision dualOffHandFill = GunInputRouter.resolve(true, true, false, true, true);
         ReloadIntentMessage fillIntent = ReloadIntentFactory.create(dualOffHandFill, 22, 4);
         assertTrue(fillIntent.offHand());

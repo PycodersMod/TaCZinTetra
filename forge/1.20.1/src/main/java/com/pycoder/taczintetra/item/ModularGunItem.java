@@ -1,5 +1,6 @@
 package com.pycoder.taczintetra.item;
 
+import com.mojang.logging.LogUtils;
 import com.pycoder.taczintetra.TaCZinTetra;
 import com.pycoder.taczintetra.logic.AmmoStatePolicy;
 import com.pycoder.taczintetra.config.TetraItemStackProfileResolver;
@@ -9,29 +10,43 @@ import com.pycoder.taczintetra.logic.HeatCurve;
 import com.pycoder.taczintetra.logic.ShotCountCalculator;
 import com.pycoder.taczintetra.logic.GunStateRevalidator;
 import com.pycoder.taczintetra.logic.ResourceNbtAdapter;
+import com.pycoder.taczintetra.logic.GunBodyDisplayPolicy;
 import com.pycoder.taczintetra.config.ConfiguredAmmoRecipeResolver;
-import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.api.item.nbt.GunItemDataAccessor;
+import com.tacz.guns.api.GunProperties;
+import com.tacz.guns.api.modifier.ParameterizedCachePair;
+import com.tacz.guns.entity.shooter.ShooterDataHolder;
 import com.tacz.guns.api.DefaultAssets;
 import com.tacz.guns.api.item.attachment.AttachmentType;
+import com.tacz.guns.api.item.builder.AttachmentItemBuilder;
 import com.tacz.guns.api.item.gun.FireMode;
+import com.tacz.guns.client.renderer.item.GunItemRendererWrapper;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import se.mickelus.tetra.items.modular.ItemModularHandheld;
 import se.mickelus.tetra.gui.GuiModuleOffsets;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 /**
  * 由 Tetra 驱动的枪械主体。TaCZ 运行行为刻意放在服务逻辑中，
  * 避免模块数据和逐物品栈状态泄漏到 Item 类中。
  */
-public class ModularGunItem extends ItemModularHandheld implements IGun {
+public class ModularGunItem extends ItemModularHandheld implements GunItemDataAccessor {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final boolean NATIVE_AMMO_WRITE_TRACE = Boolean.getBoolean("taczintetra.dev_trace_ammo_writes");
     private static final String AMMO = "taczintetra_ammo";
     private static final String FIRE_MODE = "taczintetra_fire_mode";
     private static final String BULLET = "taczintetra_bullet";
@@ -39,7 +54,6 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     private static final String OVERHEAT = "taczintetra_overheat";
     private static final String HEAT_TICK = "taczintetra_heat_tick";
     private static final ResourceLocation GUN_ID = ResourceLocation.fromNamespaceAndPath(TaCZinTetra.MOD_ID, "modular_gun");
-    private static final ResourceLocation DISPLAY_ID = ResourceLocation.fromNamespaceAndPath("tacz", "modular_gun_display");
     /** 冷却状态不得在每个服务端 tick 修改手持物品栈。 */
     private static final Map<ItemStack, Float> RUNTIME_HEAT = Collections.synchronizedMap(new WeakHashMap<>());
     /** 独立的延迟冷却锚点；持久化 NBT 仍只在开火时写入。 */
@@ -58,6 +72,27 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         };
         refreshConfiguredDurability();
         this.canHone = true;
+    }
+
+    /** Match TaCZ AbstractGunItem: keep vanilla attack swings from lowering the gun pose. */
+    @Override
+    public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+        return true;
+    }
+
+    @Override
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            private GunItemRendererWrapper renderer;
+
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (renderer == null) {
+                    renderer = new GunItemRendererWrapper();
+                }
+                return renderer;
+            }
+        });
     }
 
     /**
@@ -84,10 +119,12 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
                 GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
         return profile == null ? 1.0f : (float) Math.max(0.01, profile.visual().aimingZoom());
     }
-    @Override public boolean useDummyAmmo(ItemStack stack) { return true; }
-    @Override public int getDummyAmmoAmount(ItemStack stack) { return Math.max(0, stack.getOrCreateTag().getInt(AMMO)); }
-    @Override public void setDummyAmmoAmount(ItemStack stack, int amount) { stack.getOrCreateTag().putInt(AMMO, Math.max(0, amount)); }
-    @Override public void addDummyAmmoAmount(ItemStack stack, int amount) { setDummyAmmoAmount(stack, AmmoStatePolicy.addSaturated(getDummyAmmoAmount(stack), amount)); }
+    // Reload reserves come from Tetra's configured material accounts, not
+    // TaCZ's single integer dummy-ammo pool.
+    @Override public boolean useDummyAmmo(ItemStack stack) { return false; }
+    @Override public int getDummyAmmoAmount(ItemStack stack) { return GunItemDataAccessor.super.getDummyAmmoAmount(stack); }
+    @Override public void setDummyAmmoAmount(ItemStack stack, int amount) { GunItemDataAccessor.super.setDummyAmmoAmount(stack, amount); }
+    @Override public void addDummyAmmoAmount(ItemStack stack, int amount) { GunItemDataAccessor.super.addDummyAmmoAmount(stack, amount); }
     @Override public boolean hasMaxDummyAmmo(ItemStack stack) { return true; }
     @Override public int getMaxDummyAmmoAmount(ItemStack stack) {
         var profile = TetraItemStackProfileResolver.tryResolve(this, stack,
@@ -113,10 +150,33 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     }
 
     @Override public void setAttachmentLock(ItemStack stack, boolean locked) { }
-    @Override public ResourceLocation getGunId(ItemStack stack) { return GUN_ID; }
-    @Override public void setGunId(ItemStack stack, ResourceLocation id) { }
-    @Override public ResourceLocation getGunDisplayId(ItemStack stack) { return DISPLAY_ID; }
-    @Override public void setGunDisplayId(ItemStack stack, ResourceLocation id) { }
+    @Override public ResourceLocation getGunId(ItemStack stack) {
+        ResourceLocation id = GunItemDataAccessor.super.getGunId(stack);
+        if (id == null || DefaultAssets.EMPTY_GUN_ID.equals(id)) {
+            GunItemDataAccessor.super.setGunId(stack, GUN_ID);
+            return GUN_ID;
+        }
+        return id;
+    }
+    @Override public void setGunId(ItemStack stack, ResourceLocation id) {
+        GunItemDataAccessor.super.setGunId(stack, id);
+    }
+    @Override public ResourceLocation getGunDisplayId(ItemStack stack) {
+        ResourceLocation id = GunItemDataAccessor.super.getGunDisplayId(stack);
+        if (id == null || DefaultAssets.DEFAULT_GUN_DISPLAY_ID.equals(id)
+                || GunBodyDisplayPolicy.isManagedDisplayId(id)) {
+            var modules = TetraItemStackProfileResolver.selectedModules(this, stack,
+                    GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
+            String bodyVariant = modules == null ? null : modules.body().variantId();
+            ResourceLocation selectedDisplay = GunBodyDisplayPolicy.displayIdForBody(bodyVariant);
+            GunItemDataAccessor.super.setGunDisplayId(stack, selectedDisplay);
+            return selectedDisplay;
+        }
+        return id;
+    }
+    @Override public void setGunDisplayId(ItemStack stack, ResourceLocation id) {
+        GunItemDataAccessor.super.setGunDisplayId(stack, id);
+    }
     @Override public int getLevel(int exp) { return 0; }
     @Override public int getExp(int level) { return 0; }
     @Override public int getMaxLevel() { return 0; }
@@ -125,15 +185,86 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     @Override public int getExpToNextLevel(ItemStack stack) { return 0; }
     @Override public int getExpCurrentLevel(ItemStack stack) { return 0; }
     @Override public FireMode getFireMode(ItemStack stack) {
-        try { return FireMode.valueOf(stack.getOrCreateTag().getString(FIRE_MODE)); }
-        catch (IllegalArgumentException ignored) { return FireMode.SEMI; }
+        migrateNativeGunState(stack);
+        FireMode mode = GunItemDataAccessor.super.getFireMode(stack);
+        return mode == null || mode == FireMode.UNKNOWN ? FireMode.SEMI : mode;
     }
-    @Override public void setFireMode(ItemStack stack, FireMode mode) { stack.getOrCreateTag().putString(FIRE_MODE, mode == null ? FireMode.SEMI.name() : mode.name()); }
+    @Override public void setFireMode(ItemStack stack, FireMode mode) {
+        GunItemDataAccessor.super.setFireMode(stack, mode == null ? FireMode.SEMI : mode);
+    }
     @Override public int getCurrentAmmoCount(ItemStack stack) {
+        migrateNativeGunState(stack);
         revalidateRuntimeState(stack);
-        return getDummyAmmoAmount(stack);
+        return Math.min(getMaxDummyAmmoAmount(stack),
+                Math.max(0, GunItemDataAccessor.super.getCurrentAmmoCount(stack)));
     }
-    @Override public void setCurrentAmmoCount(ItemStack stack, int count) { setDummyAmmoAmount(stack, count); }
+    @Override public void setCurrentAmmoCount(ItemStack stack, int count) {
+        migrateNativeGunState(stack);
+        int before = stack.getOrCreateTag().getInt("GunCurrentAmmoCount");
+        int after = Math.min(getMaxDummyAmmoAmount(stack), Math.max(0, count));
+        GunItemDataAccessor.super.setCurrentAmmoCount(stack, after);
+        var tag = stack.getOrCreateTag();
+        if (NATIVE_AMMO_WRITE_TRACE && before != after) {
+            String stackUuid = tag.hasUUID("taczintetra_stack_uuid")
+                    ? tag.getUUID("taczintetra_stack_uuid").toString() : "missing";
+            String caller = StackWalker.getInstance().walk(frames -> frames.skip(1).limit(8)
+                    .map(Object::toString).collect(Collectors.joining(" <- ")));
+            LOGGER.info("NATIVE_AMMO_WRITE_TRACE source=setCurrentAmmoCount thread={} stackUuid={} before={} requested={} after={} caller={}",
+                    Thread.currentThread().getName(), stackUuid, before, count, after, caller);
+        }
+    }
+
+    /** Move old TaCZinTetra state into TaCZ's standard per-stack fields once. */
+    private void migrateNativeGunState(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        var tag = stack.getOrCreateTag();
+        if (!tag.contains("GunCurrentAmmoCount", net.minecraft.nbt.Tag.TAG_INT)) {
+            int legacyAmmo = tag.contains(AMMO, net.minecraft.nbt.Tag.TAG_INT)
+                    ? tag.getInt(AMMO) : tag.getInt("AmmoCount");
+            int migratedAmmo = Math.max(0, legacyAmmo);
+            GunItemDataAccessor.super.setCurrentAmmoCount(stack, migratedAmmo);
+            if (NATIVE_AMMO_WRITE_TRACE && migratedAmmo != 0) {
+                String stackUuid = tag.hasUUID("taczintetra_stack_uuid")
+                        ? tag.getUUID("taczintetra_stack_uuid").toString() : "missing";
+                String caller = StackWalker.getInstance().walk(frames -> frames.skip(1).limit(8)
+                        .map(Object::toString).collect(Collectors.joining(" <- ")));
+                LOGGER.info("NATIVE_AMMO_WRITE_TRACE source=migrateNativeGunState thread={} stackUuid={} before=0 requested={} after={} caller={}",
+                        Thread.currentThread().getName(), stackUuid, legacyAmmo, migratedAmmo, caller);
+            }
+        }
+        if (!tag.contains("GunFireMode", net.minecraft.nbt.Tag.TAG_STRING)
+                && tag.contains(FIRE_MODE, net.minecraft.nbt.Tag.TAG_STRING)) {
+            GunItemDataAccessor.super.setFireMode(stack,
+                    parseLegacyFireMode(tag.getString(FIRE_MODE)));
+        }
+        if (!tag.contains("HasBulletInBarrel", net.minecraft.nbt.Tag.TAG_BYTE)
+                && tag.contains(BULLET, net.minecraft.nbt.Tag.TAG_BYTE)) {
+            GunItemDataAccessor.super.setBulletInBarrel(stack, tag.getBoolean(BULLET));
+        }
+        if (!tag.contains("HeatAmount", net.minecraft.nbt.Tag.TAG_FLOAT)
+                && tag.contains(HEAT, net.minecraft.nbt.Tag.TAG_FLOAT)) {
+            GunItemDataAccessor.super.setHeatAmount(stack, tag.getFloat(HEAT));
+        }
+        if (!tag.contains("OverHeated", net.minecraft.nbt.Tag.TAG_BYTE)
+                && tag.contains(OVERHEAT, net.minecraft.nbt.Tag.TAG_BYTE)) {
+            GunItemDataAccessor.super.setOverheatLocked(stack, tag.getBoolean(OVERHEAT));
+        }
+        tag.remove(AMMO);
+        tag.remove("AmmoCount");
+        tag.remove(FIRE_MODE);
+        tag.remove(BULLET);
+        tag.remove(HEAT);
+        tag.remove(OVERHEAT);
+    }
+
+    private static FireMode parseLegacyFireMode(String value) {
+        try {
+            FireMode mode = FireMode.valueOf(value);
+            return mode == FireMode.UNKNOWN ? FireMode.SEMI : mode;
+        } catch (IllegalArgumentException ignored) {
+            return FireMode.SEMI;
+        }
+    }
 
     /** 根据当前模块档案重新验证已保存的弹药/资源状态。 */
     public void revalidateRuntimeState(ItemStack stack) {
@@ -141,10 +272,21 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         int maxAmmo = getMaxDummyAmmoAmount(stack);
         int maxResource = getResourceCapacity(stack);
         var recipe = ConfiguredAmmoRecipeResolver.select(TaCZinTetra.MODULE_CONFIG, this, stack);
+        int loadedAmmo = Math.max(0, GunItemDataAccessor.super.getCurrentAmmoCount(stack));
         var state = GunStateRevalidator.revalidate(new GunStateRevalidator.State(
-                maxAmmo, getDummyAmmoAmount(stack), maxResource, 0, java.util.List.of("semi"), "semi"));
-        if (state.currentAmmo() != getDummyAmmoAmount(stack)) {
-            setDummyAmmoAmount(stack, state.currentAmmo());
+                maxAmmo, loadedAmmo, maxResource, 0, java.util.List.of("semi"), "semi"));
+        if (state.currentAmmo() != loadedAmmo) {
+            GunItemDataAccessor.super.setCurrentAmmoCount(stack, state.currentAmmo());
+            if (NATIVE_AMMO_WRITE_TRACE) {
+                var tag = stack.getOrCreateTag();
+                String stackUuid = tag.hasUUID("taczintetra_stack_uuid")
+                        ? tag.getUUID("taczintetra_stack_uuid").toString() : "missing";
+                String caller = StackWalker.getInstance().walk(frames -> frames.skip(1).limit(8)
+                        .map(Object::toString).collect(Collectors.joining(" <- ")));
+                LOGGER.info("NATIVE_AMMO_REVALIDATE_WRITE_TRACE thread={} stackUuid={} before={} maxAmmo={} after={} caller={}",
+                        Thread.currentThread().getName(), stackUuid, loadedAmmo, maxAmmo,
+                        state.currentAmmo(), caller);
+            }
         }
         if (recipe != null) {
             for (String resourceId : recipe.cost().keySet()) {
@@ -206,35 +348,133 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
         }
         return 0;
     }
-    @Override public ItemStack getAttachment(ItemStack stack, AttachmentType type) { return ItemStack.EMPTY; }
+    @Override public ItemStack getAttachment(ItemStack stack, AttachmentType type) {
+        ResourceLocation attachmentId = nativeAttachmentId(stack, type);
+        if (DefaultAssets.EMPTY_ATTACHMENT_ID.equals(attachmentId)) return ItemStack.EMPTY;
+        return AttachmentItemBuilder.create().setId(attachmentId).build();
+    }
     @Override public ItemStack getBuiltinAttachment(ItemStack stack, AttachmentType type) { return ItemStack.EMPTY; }
+    /** Tetra owns gameplay properties; these TaCZ stacks are render-only native model views. */
     @Override public CompoundTag getAttachmentTag(ItemStack stack, AttachmentType type) { return new CompoundTag(); }
     @Override public ResourceLocation getBuiltInAttachmentId(ItemStack stack, AttachmentType type) { return DefaultAssets.EMPTY_ATTACHMENT_ID; }
-    @Override public ResourceLocation getAttachmentId(ItemStack stack, AttachmentType type) { return DefaultAssets.EMPTY_ATTACHMENT_ID; }
+    @Override public ResourceLocation getAttachmentId(ItemStack stack, AttachmentType type) {
+        return DefaultAssets.EMPTY_ATTACHMENT_ID;
+    }
     @Override public void installAttachment(ItemStack stack, ItemStack attachment) { }
     @Override public void unloadAttachment(ItemStack stack, AttachmentType type) { }
     @Override public boolean allowAttachment(ItemStack stack, ItemStack attachment) { return false; }
     @Override public boolean allowAttachmentType(ItemStack stack, AttachmentType type) { return false; }
-    @Override public boolean hasBulletInBarrel(ItemStack stack) { return stack.getOrCreateTag().getBoolean(BULLET); }
-    @Override public void setBulletInBarrel(ItemStack stack, boolean value) { stack.getOrCreateTag().putBoolean(BULLET, value); }
+
+    private ResourceLocation nativeAttachmentId(ItemStack stack, AttachmentType type) {
+        if (stack == null || stack.isEmpty() || type == null) {
+            return DefaultAssets.EMPTY_ATTACHMENT_ID;
+        }
+        try {
+            String moduleSlot = switch (type) {
+                case SCOPE -> GunModuleSlots.OPTIC;
+                case MUZZLE -> GunModuleSlots.BARREL;
+                case EXTENDED_MAG -> GunModuleSlots.MAGAZINE;
+                case GRIP -> GunModuleSlots.GRIP;
+                case STOCK -> GunModuleSlots.STOCK;
+                default -> null;
+            };
+            if (moduleSlot == null || getModuleFromSlot(stack, moduleSlot) == null) {
+                return DefaultAssets.EMPTY_ATTACHMENT_ID;
+            }
+            var modules = TetraItemStackProfileResolver.selectedModules(this, stack,
+                    GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
+            if (modules == null) return DefaultAssets.EMPTY_ATTACHMENT_ID;
+            return GunBodyDisplayPolicy.nativeAttachmentIdForBody(modules.body().variantId(), type)
+                    .orElse(DefaultAssets.EMPTY_ATTACHMENT_ID);
+        } catch (RuntimeException ignored) {
+            // Tetra module data can be incomplete during load; never invent an attachment in that state.
+            return DefaultAssets.EMPTY_ATTACHMENT_ID;
+        }
+    }
+    @Override public boolean hasBulletInBarrel(ItemStack stack) {
+        migrateNativeGunState(stack);
+        return GunItemDataAccessor.super.hasBulletInBarrel(stack);
+    }
+    @Override public void setBulletInBarrel(ItemStack stack, boolean value) {
+        GunItemDataAccessor.super.setBulletInBarrel(stack, value);
+    }
     @Override public boolean useInventoryAmmo(ItemStack stack) { return false; }
     @Override public boolean hasInventoryAmmo(net.minecraft.world.entity.LivingEntity entity, ItemStack stack, boolean check) { return false; }
+    @Override
+    public <T> T modifyProperty(ShooterDataHolder holder, ItemStack stack, LivingEntity shooter,
+                                String propertyName, Class<T> type, T defaultValue) {
+        var profile = TetraItemStackProfileResolver.tryResolve(this, stack,
+                GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
+        if (profile == null) return defaultValue;
+        var projectile = profile.projectile();
+        if (GunProperties.AMMO_SPEED.name().equals(propertyName)
+                && defaultValue instanceof Float base
+                && Double.isFinite(projectile.velocity()) && projectile.velocity() > 0) {
+            return type.cast(base * (float) projectile.velocity());
+        }
+        if (GunProperties.EFFECTIVE_RANGE.name().equals(propertyName)
+                && defaultValue instanceof Float base
+                && Double.isFinite(projectile.range()) && projectile.range() > 0) {
+            return type.cast(base * (float) projectile.range());
+        }
+        if (GunProperties.ARMOR_IGNORE.name().equals(propertyName)
+                && defaultValue instanceof Float base && Double.isFinite(projectile.armorIgnore())) {
+            return type.cast(Math.max(0, Math.min(1, base + (float) projectile.armorIgnore())));
+        }
+        if (GunProperties.PIERCE.name().equals(propertyName)
+                && defaultValue instanceof Integer && projectile.pierce() > 0) {
+            return type.cast(Math.max(1, projectile.pierce()));
+        }
+        if (GunProperties.KNOCKBACK.name().equals(propertyName)
+                && defaultValue instanceof Float base
+                && Double.isFinite(projectile.knockback()) && projectile.knockback() > 0) {
+            return type.cast(base * (float) projectile.knockback());
+        }
+        return defaultValue;
+    }
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T modifyProperty(ShooterDataHolder holder, ItemStack stack, LivingEntity shooter,
+                                String function, String propertyName, Class<T> type, T defaultValue) {
+        if ("modify_cached_property".equals(function)
+                && GunProperties.RECOIL.name().equals(propertyName)
+                && defaultValue instanceof ParameterizedCachePair<?, ?> pair
+                && type.isInstance(defaultValue)) {
+            var profile = TetraItemStackProfileResolver.tryResolve(this, stack,
+                    GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
+            if (profile != null && Double.isFinite(profile.handling().recoilAdd())
+                    && profile.handling().recoilAdd() >= 0) {
+                var recoil = (ParameterizedCachePair<Float, Float>) pair;
+                return type.cast(com.pycoder.taczintetra.logic.TaczNativeRecoilCacheAdapter.scale(
+                        recoil, profile.handling().recoilAdd()));
+            }
+        }
+        return modifyProperty(holder, stack, shooter, propertyName, type, defaultValue);
+    }
     @Override public int getRPM(ItemStack stack) {
         var profile = TetraItemStackProfileResolver.tryResolve(this, stack,
                 GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
         return profile == null ? configuredInt("rpm", 400) : profile.fireControl().roundsPerMinute();
     }
     @Override public boolean isCanCrawl(ItemStack stack) { return true; }
+    /** This firearm is not a Tetra blocking tool; suppress its block-progress reticle. */
+    @Override public float getBlockProgress(ItemStack stack, LivingEntity entity) { return 0.0f; }
     @Override public boolean hasCustomLaserColor(ItemStack stack) { return false; }
     @Override public int getLaserColor(ItemStack stack) { return 0; }
     @Override public void setLaserColor(ItemStack stack, int color) { }
     @Override public boolean hasHeatData(ItemStack stack) { return true; }
-    @Override public boolean isOverheatLocked(ItemStack stack) { return stack.getOrCreateTag().getBoolean(OVERHEAT); }
-    @Override public void setOverheatLocked(ItemStack stack, boolean locked) { stack.getOrCreateTag().putBoolean(OVERHEAT, locked); }
+    @Override public boolean isOverheatLocked(ItemStack stack) {
+        migrateNativeGunState(stack);
+        return GunItemDataAccessor.super.isOverheatLocked(stack);
+    }
+    @Override public void setOverheatLocked(ItemStack stack, boolean locked) {
+        GunItemDataAccessor.super.setOverheatLocked(stack, locked);
+    }
     @Override public void setHeatAmount(ItemStack stack, float amount) {
         float bounded = (float) Math.min(heatStat(stack, "max_heat", 100), Float.isFinite(amount) ? Math.max(0, amount) : 0);
         RUNTIME_HEAT.put(stack, bounded);
-        stack.getOrCreateTag().putFloat(HEAT, bounded);
+        migrateNativeGunState(stack);
+        GunItemDataAccessor.super.setHeatAmount(stack, bounded);
     }
     @Override public float lerpRPM(ItemStack stack) {
         double threshold = heatStat(stack, "overheat_threshold", heatStat(stack, "max_heat", 100));
@@ -260,7 +500,9 @@ public class ModularGunItem extends ItemModularHandheld implements IGun {
     }
     @Override public float getHeatAmount(ItemStack stack) {
         Float runtime = RUNTIME_HEAT.get(stack);
-        return runtime == null ? stack.getOrCreateTag().getFloat(HEAT) : runtime;
+        if (runtime != null) return runtime;
+        migrateNativeGunState(stack);
+        return GunItemDataAccessor.super.getHeatAmount(stack);
     }
 
     public int independentShots(ItemStack stack) {

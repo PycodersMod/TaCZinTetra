@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "taczintetra:physical_part/magazine",
+  "pattern": [
+    "PP",
+    "PP"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "result": {
+    "item": "taczintetra:iron_magazine",
+    "count": 1
+  }
+}

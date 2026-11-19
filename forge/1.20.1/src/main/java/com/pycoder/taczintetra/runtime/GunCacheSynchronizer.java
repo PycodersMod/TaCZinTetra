@@ -31,13 +31,13 @@ public final class GunCacheSynchronizer {
                 && binding.identity() == identity) return;
 
         AttachmentPropertyManager.postChangeEvent(entity, stack);
-        if (operator.getCacheProperty() != null) return;
-
-        TimelessAPI.getCommonGunIndex(gun.getGunId(stack)).ifPresent(index -> {
-            AttachmentCacheProperty cache = new AttachmentCacheProperty();
-            cache.eval(stack, index.getGunData());
-            operator.updateCacheProperty(cache);
-        });
+        if (operator.getCacheProperty() == null) {
+            TimelessAPI.getCommonGunIndex(gun.getGunId(stack)).ifPresent(index -> {
+                AttachmentCacheProperty cache = new AttachmentCacheProperty();
+                cache.eval(stack, index.getGunData());
+                operator.updateCacheProperty(cache);
+            });
+        }
         BINDINGS.put(entity, new CacheBinding(stack, identity));
     }
 

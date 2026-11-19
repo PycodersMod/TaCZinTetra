@@ -2,6 +2,8 @@ package com.pycoder.taczintetra.compat;
 
 import com.pycoder.taczintetra.config.TaczInTetraForgeConfig;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.SmithingTrimRecipe;
 
 import java.util.Set;
 
@@ -21,6 +23,11 @@ public final class NativeTaczRestrictionService {
 
     public static boolean isNativeTaczWorkbench(ResourceLocation id) {
         return id != null && "tacz".equals(id.getNamespace()) && NATIVE_WORKBENCH_IDS.contains(id.getPath());
+    }
+
+    /** Smithing trim results require the dynamic trim-pattern registry. */
+    public static boolean requiresDynamicRegistryForResult(Recipe<?> recipe) {
+        return recipe instanceof SmithingTrimRecipe;
     }
 
     public static boolean shouldBlockNativeItem(ResourceLocation id) {

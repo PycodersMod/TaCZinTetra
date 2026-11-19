@@ -36,6 +36,30 @@ class JeiRestrictionContractTest {
     }
 
     @Test
+    void jeiResultFilterBypassesRegistryBoundTrimRecipes() throws Exception {
+        String source = Files.readString(ROOT.resolve("java/com/pycoder/taczintetra/compat/jei/TaczJeiPlugin.java"),
+                StandardCharsets.UTF_8);
+        int guard = source.indexOf("requiresDynamicRegistryForResult(recipe)");
+        int resultInspection = source.indexOf("recipe.getResultItem(net.minecraft.core.RegistryAccess.EMPTY)");
+
+        assertTrue(guard >= 0, "JEI result filtering must share the registry-bound recipe guard");
+        assertTrue(resultInspection > guard,
+                "JEI must bypass result resolution for recipes requiring dynamic registries");
+        assertTrue(source.substring(guard, resultInspection).contains("original.accept(recipe)")
+                        || source.substring(guard, resultInspection).contains("continue;"),
+                "registry-bound recipes must stay visible to JEI");
+    }
+
+    @Test
+    void sharedGuardTargetsSmithingTrimRecipes() throws Exception {
+        String source = Files.readString(
+                ROOT.resolve("java/com/pycoder/taczintetra/compat/NativeTaczRestrictionService.java"),
+                StandardCharsets.UTF_8);
+        assertTrue(source.contains("boolean requiresDynamicRegistryForResult(Recipe<?> recipe)"));
+        assertTrue(source.contains("return recipe instanceof SmithingTrimRecipe;"));
+    }
+
+    @Test
     void keepsJeiDevelopmentRuntimeOptionalForPublishedArtifact() throws Exception {
         String build = Files.readString(Path.of("build.gradle.kts"), StandardCharsets.UTF_8);
         assertTrue(build.contains("runtimeOnly(fg.deobf(\"mezz.jei:jei-1.20.1-forge:15.20.0.106\"))"));

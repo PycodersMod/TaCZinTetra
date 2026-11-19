@@ -20,6 +20,10 @@ public final class TaCZGunpackExporter {
             "data/taczintetra/data/guns/modular_gun_data.json",
             "data/taczintetra/index/guns/modular_gun.json",
             "assets/tacz/display/guns/modular_gun_display.json",
+            "assets/tacz/display/guns/modular_gun_rifle_display.json",
+            "assets/tacz/display/guns/modular_gun_machine_gun_display.json",
+            "assets/tacz/display/guns/modular_gun_shotgun_display.json",
+            "assets/tacz/display/guns/modular_gun_sniper_display.json",
             "assets/taczintetra/gunpack_info.json",
             "assets/taczintetra/lang/zh_cn.json",
             "assets/taczintetra/lang/en_us.json"

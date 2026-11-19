@@ -32,6 +32,11 @@ public abstract class RecipeManagerMixin {
             if (Boolean.getBoolean("taczintetra.dev_automation") && id != null) {
                 LOGGER.info("TaCZinTetra dev recipe filter observed {}", id);
             }
+            if (NativeTaczRestrictionService.shouldBlockNativeRecipe(id, null)) return;
+            if (NativeTaczRestrictionService.requiresDynamicRegistryForResult(recipe)) {
+                original.accept(recipe);
+                return;
+            }
             ResourceLocation resultId = null;
             try {
                 ItemStack result = recipe.getResultItem(RegistryAccess.EMPTY);

@@ -13,6 +13,7 @@ import com.pycoder.taczintetra.runtime.GunInputRouter;
 import com.pycoder.taczintetra.runtime.ReloadIntentFactory;
 import com.pycoder.taczintetra.runtime.ReloadSequence;
 import com.pycoder.taczintetra.runtime.GunVisualRoutingPolicy;
+import com.pycoder.taczintetra.logic.NetworkTimestampPolicy;
 import com.pycoder.taczintetra.config.TetraItemStackProfileResolver;
 import com.tacz.guns.client.input.ReloadKey;
 import com.tacz.guns.client.input.FireSelectKey;
@@ -45,16 +46,19 @@ public final class ClientReloadInputHandler {
         if (minecraft.player == null || minecraft.screen != null) return;
         ItemStack main = minecraft.player.getMainHandItem();
         ItemStack offhand = minecraft.player.getOffhandItem();
+        boolean mainGun = main.getItem() instanceof ModularGunItem;
         boolean mainTwoHanded = main.getItem() instanceof ModularGunItem gun
                 && TetraItemStackProfileResolver.isTwoHanded(gun, main);
         boolean offhandGun = offhand.getItem() instanceof ModularGunItem;
-        boolean dualPistol = !mainTwoHanded && main.getItem() instanceof ModularGunItem && offhandGun;
-        if (GunInputRouter.offhandShootAllowed(main.getItem() instanceof ModularGunItem,
-                offhandGun, mainTwoHanded)) {
+        boolean dualPistol = mainGun && offhandGun && !mainTwoHanded;
+        if (dualPistol && GunInputRouter.offhandShootAllowed(mainGun, offhandGun, mainTwoHanded)) {
             if (event.getAction() == GLFW.GLFW_PRESS) {
                 sequence = ReloadSequence.next(sequence);
+                long timestamp = NetworkTimestampPolicy.clientTimestamp(System.currentTimeMillis(),
+                        IClientPlayerGunOperator.fromLocalPlayer(minecraft.player)
+                                .getDataHolder().clientBaseTimestamp);
                 ModNetwork.CHANNEL.sendToServer(new OffhandShootIntentMessage(
-                        StackIdentity.of(offhand), sequence, System.currentTimeMillis()));
+                        StackIdentity.of(offhand), sequence, timestamp));
             }
             if (Boolean.getBoolean("taczintetra.dev_automation")) {
                 LOGGER.info("TaCZinTetra dev dual-hand RMB intercepted: action={}, offhandShot={}",
@@ -110,14 +114,14 @@ public final class ClientReloadInputHandler {
             return;
         }
 
-        // 主手换弹交由 TaCZ 处理。若同时发送自定义数据包，
-        // 一次实体按键就会触发两条互相竞争的换弹流程。
-        if (!decision.routeReloadToOffHand()) return;
+        // 普通主手 R 交给 TaCZ 的 ReloadKey -> IGunOperator.reload() 原生路径；
+        // 仅双持 Ctrl+R 与 Shift+R 批量补弹使用额外意图。
+        if (!GunInputRouter.shouldRouteReloadToCustomHandler(decision)) return;
 
         ItemStack active = decision.routeReloadToOffHand() ? offHand : main;
-        sequence = ReloadSequence.next(sequence);
+        int reloadSequence = ReloadSequence.next();
         ReloadIntentMessage intent = ReloadIntentFactory.create(
-                decision, StackIdentity.of(active), sequence);
+                decision, StackIdentity.of(active), reloadSequence);
         ModNetwork.CHANNEL.sendToServer(intent);
     }
 }

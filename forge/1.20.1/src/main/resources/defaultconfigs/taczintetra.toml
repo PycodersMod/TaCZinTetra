@@ -20,8 +20,5 @@ body_material = "wood"
 magazine_material = "wood"
 recipe = ["#minecraft:planks", "#minecraft:planks", "#minecraft:planks", "#minecraft:planks", "minecraft:stick", "", "#minecraft:wooden_slabs", "", ""]
 
-[client]
-force_dot_crosshair_for_modular_gun = true
-
 [debug]
 logging = false

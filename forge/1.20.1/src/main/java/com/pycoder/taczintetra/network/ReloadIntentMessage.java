@@ -60,10 +60,12 @@ public record ReloadIntentMessage(boolean offHand, boolean singleBatch,
         boolean hasGun = held.getItem() instanceof ModularGunItem;
         ReloadIntentServerGate gate = SERVER_GATES.computeIfAbsent(sender,
                 ignored -> new ReloadIntentServerGate());
+        boolean otherHandReloading = ReloadRuntimeCoordinator.otherHandReloading(sender, hand);
+        boolean broken = held.getDamageValue() >= held.getMaxDamage() && held.isDamageableItem();
+        boolean overheatLocked = held.getOrCreateTag().getBoolean("taczintetra_overheat");
+        int heldIdentity = StackIdentity.of(held);
         boolean accepted = gate.accept(message, StackIdentity.of(held), hasGun,
-                ReloadRuntimeCoordinator.otherHandReloading(sender, hand),
-                held.getDamageValue() >= held.getMaxDamage() && held.isDamageableItem(),
-                held.getOrCreateTag().getBoolean("taczintetra_overheat"));
+                otherHandReloading, broken, overheatLocked);
         if (accepted) {
             StackIdentity.ensureUniqueId(held);
             held.getOrCreateTag().putBoolean(FILL_MODE, !message.singleBatch());
@@ -84,8 +86,9 @@ public record ReloadIntentMessage(boolean offHand, boolean singleBatch,
                         message.stackIdentity(), message.sequence());
             }
         } else if (Boolean.getBoolean("taczintetra.dev_automation")) {
-            LOGGER.info("TaCZinTetra dev reload intent rejected: hand={}, identity={}, sequence={}",
-                    hand, message.stackIdentity(), message.sequence());
+            LOGGER.info("TaCZinTetra dev reload intent rejected: hand={}, requestedIdentity={}, heldIdentity={}, hasGun={}, otherHandReloading={}, broken={}, overheatLocked={}, hasUniqueId={}, sequence={}",
+                    hand, message.stackIdentity(), heldIdentity, hasGun, otherHandReloading, broken,
+                    overheatLocked, StackIdentity.hasUniqueId(held), message.sequence());
         }
     }
 }

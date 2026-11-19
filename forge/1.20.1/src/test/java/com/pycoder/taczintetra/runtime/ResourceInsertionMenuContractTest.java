@@ -31,8 +31,8 @@ class ResourceInsertionMenuContractTest {
         String service = Files.readString(Path.of(
                 "src/main/java/com/pycoder/taczintetra/runtime/ResourceInsertionService.java"), StandardCharsets.UTF_8);
         assertTrue(service.contains("recipe.cost().containsKey(resourceId)"));
-        assertTrue(service.contains("AmmoId"));
-        assertTrue(service.contains("ResourceLocation.tryParse"));
+        assertTrue(service.contains("IAmmo.getIAmmoOrNull(resource)"));
+        assertTrue(service.contains("taCZAmmo.getAmmoId(resource)"));
     }
 
     @Test

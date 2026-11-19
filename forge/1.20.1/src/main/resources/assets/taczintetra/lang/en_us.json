@@ -30,5 +30,12 @@
   "tetra.module.taczintetra/barrel/338.name": "Barrel",
   "tetra.module.taczintetra/barrel/12g.name": "Barrel",
   "tetra.module.taczintetra/barrel/40mm.name": "Barrel",
-  "tetra.module.taczintetra/magazine/standard.name": "Magazine"
+  "tetra.module.taczintetra/magazine/standard.name": "Magazine",
+  "tetra.holo.craft.taczintetra": "Firearms",
+  "tetra.slot.taczintetra/special": "Special Inlay",
+  "tetra.variant_category.taczintetra.label": "Firearm Components",
+  "tetra/schematic/taczintetra/special_socket.name": "Install Special Inlay Socket",
+  "tetra/schematic/taczintetra/special_socket.description": "Install a socket for compatible firearm special inlays.",
+  "tetra/schematic/taczintetra/special_socket.description_details": "The special slot must be installed before a compatible special inlay can be fitted to the firearm.",
+  "tetra/schematic/taczintetra/special_socket.slot1": "Special Inlay Material"
 }

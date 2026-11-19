@@ -18,8 +18,10 @@ import net.minecraft.world.InteractionHand;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.entity.ReloadState;
 import com.tacz.guns.api.event.common.GunShootEvent;
+import com.tacz.guns.api.event.common.GunReloadEvent;
 import com.tacz.guns.network.NetworkHandler;
 import com.tacz.guns.network.message.event.ServerMessageGunShoot;
+import com.tacz.guns.network.message.event.ServerMessageGunReload;
 import com.tacz.guns.api.item.gun.FireMode;
 import com.tacz.guns.entity.shooter.ShooterDataHolder;
 import com.tacz.guns.init.ModItems;
@@ -133,7 +135,6 @@ public final class ModularGunLifecycleAdapter {
                 }
             }
             GunCacheSynchronizer.ensure(shooter, stack);
-            syncNativeAmmo(gun, stack);
             if (Boolean.getBoolean("taczintetra.dev_automation")) {
                 var index = com.tacz.guns.api.TimelessAPI.getCommonGunIndex(
                         ((ModularGunItem) stack.getItem()).getGunId(stack));
@@ -142,7 +143,7 @@ public final class ModularGunLifecycleAdapter {
                         index.isPresent(),
                         index.map(ModularGunLifecycleAdapter::hasScript).orElse(false),
                         gun.getCurrentAmmoCount(stack),
-                        stack.getOrCreateTag().getInt("AmmoCount"),
+                        gun.getCurrentAmmoCount(stack),
                         shooter.getMainHandItem().equals(stack),
                         shooter.getMainHandItem().getItem() instanceof ModularGunItem);
             }
@@ -184,7 +185,6 @@ public final class ModularGunLifecycleAdapter {
         if (isModular(stack)) {
             ModularGunItem gun = (ModularGunItem) stack.getItem();
             gun.reduceCurrentAmmoCount(stack, settledShots);
-            syncNativeAmmo(gun, stack);
         }
         data.lastShootTimestamp = data.shootTimestamp;
         data.shootTimestamp = timestamp;
@@ -219,6 +219,10 @@ public final class ModularGunLifecycleAdapter {
 
     public static boolean startReload(ShooterDataHolder data, ItemStack stack, LivingEntity shooter) {
         ensureGunId(stack);
+        boolean nativeEventCancelled = isModular(stack) && MinecraftForge.EVENT_BUS.post(
+                new GunReloadEvent(shooter, stack, shooter.level().isClientSide
+                        ? LogicalSide.CLIENT : LogicalSide.SERVER));
+        if (nativeEventCancelled) return false;
         boolean eventCancelled = isModular(stack) && MinecraftForge.EVENT_BUS.post(
                 new GunRuntimeEvent(GunRuntimeEvent.Type.RELOAD, shooter, stack));
         if (eventCancelled) return false;
@@ -251,25 +255,10 @@ public final class ModularGunLifecycleAdapter {
                     ? ReloadState.StateType.TACTICAL_RELOAD_FEEDING
                     : ReloadState.StateType.EMPTY_RELOAD_FEEDING;
             data.reloadTimestamp = System.currentTimeMillis();
-            // 模组弹匣由 TiT 管理。在 TaCZ 状态机读取物品栈之前，
-            // 先同步 TaCZ 的旧版影子字段。
-            syncNativeAmmo(gun, stack);
         }
+        int ammoBeforeReload = isModular(stack)
+                ? ((ModularGunItem) stack.getItem()).getCurrentAmmoCount(stack) : -1;
         boolean accepted = delegate().startReload(data, stack, shooter);
-        if (!accepted && isModular(stack)) {
-            // 生成的枪械包刻意不包含 Lua 换弹钩子。某些 TaCZ 构建仍会在
-            // 进入原生状态机之前返回 false；此处应初始化
-            // 原生状态，但不要结算弹药。
-            ModularGunItem gun = (ModularGunItem) stack.getItem();
-            boolean tactical = gun.getCurrentAmmoCount(stack) > 0 || gun.hasBulletInBarrel(stack);
-            data.reloadStateType = tactical
-                    ? ReloadState.StateType.TACTICAL_RELOAD_FEEDING
-                    : ReloadState.StateType.EMPTY_RELOAD_FEEDING;
-            data.reloadTimestamp = System.currentTimeMillis();
-            accepted = true;
-            if (Boolean.getBoolean("taczintetra.dev_automation"))
-                LOGGER.info("TaCZinTetra dev reload delegate fallback: native tactical state seeded");
-        }
         if (Boolean.getBoolean("taczintetra.dev_automation") && !accepted)
             LOGGER.info("TaCZinTetra dev reload delegate rejected: eventCancelled={}, hand={}, ownershipStarted={}, gunId={}, currentItem={}",
                     eventCancelled, hand, ownershipStarted, stack.getOrCreateTag().getString("GunId"),
@@ -280,8 +269,12 @@ public final class ModularGunLifecycleAdapter {
             if (hand != null) ReloadRuntimeCoordinator.interrupt(shooter, hand);
         }
         if (accepted && isModular(stack)) {
+            if (!shooter.level().isClientSide) {
+                NetworkHandler.sendToTrackingEntity(
+                        new ServerMessageGunReload(shooter.getId(), stack), shooter);
+            }
             ReloadRuntimeSettlementService.markPending(stack,
-                    stack.getOrCreateTag().getBoolean("taczintetra_reload_fill"));
+                    stack.getOrCreateTag().getBoolean("taczintetra_reload_fill"), ammoBeforeReload);
             stack.getOrCreateTag().putLong(RELOAD_STARTED_AT, System.currentTimeMillis());
             stack.getOrCreateTag().putString(RELOAD_STATE, data.reloadStateType.name());
         }
@@ -292,8 +285,11 @@ public final class ModularGunLifecycleAdapter {
         ensureGunId(stack);
         boolean pending = isModular(stack) && ReloadRuntimeSettlementService.isPending(stack);
         ModularGunItem gun = pending ? (ModularGunItem) stack.getItem() : null;
-        int ammoBeforeNative = pending ? gun.getCurrentAmmoCount(stack) : -1;
-        if (pending) syncNativeAmmo(gun, stack);
+        int ammoBeforeNative = pending
+                ? stack.getOrCreateTag().contains(ReloadRuntimeSettlementService.RELOAD_AMMO_BEFORE)
+                ? stack.getOrCreateTag().getInt(ReloadRuntimeSettlementService.RELOAD_AMMO_BEFORE)
+                : gun.getCurrentAmmoCount(stack)
+                : -1;
         ReloadState.StateType activeReloadType = pending
                 ? persistedReloadState(stack, data.reloadStateType) : data.reloadStateType;
         long reloadStartedAt = pending && stack.getOrCreateTag().contains(RELOAD_STARTED_AT)
@@ -302,7 +298,6 @@ public final class ModularGunLifecycleAdapter {
             LOGGER.info("TaCZinTetra dev reload tick before delegate: state={}, elapsed={}ms",
                     data.reloadStateType, data.reloadTimestamp < 0 ? -1L : System.currentTimeMillis() - data.reloadTimestamp);
         ReloadState state = delegate().tickReload(data, stack, shooter);
-        if (pending) syncNativeAmmo(gun, stack);
         if (pending && Boolean.getBoolean("taczintetra.dev_automation"))
             LOGGER.info("TaCZinTetra dev reload tick after delegate: state={}, elapsed={}ms, result={}",
                     data.reloadStateType, data.reloadTimestamp < 0 ? -1L : System.currentTimeMillis() - data.reloadTimestamp,
@@ -332,7 +327,6 @@ public final class ModularGunLifecycleAdapter {
             // 计算弹药批次并且只扣除一次资源。
             gun.setCurrentAmmoCount(stack, ammoBeforeNative);
             boolean settled = ReloadRuntimeSettlementService.settleIfComplete(gun, stack, shooter);
-            syncNativeAmmo(gun, stack);
             if (Boolean.getBoolean("taczintetra.dev_automation")) {
                 LOGGER.info("TaCZinTetra dev reload completed: settled={}, ammo={}, resource9mm={}", settled,
                         gun.getCurrentAmmoCount(stack),
@@ -355,7 +349,9 @@ public final class ModularGunLifecycleAdapter {
             boolean empty = stateType == ReloadState.StateType.EMPTY_RELOAD_FEEDING;
             float feed = empty ? reload.getFeed().getEmptyTime() : reload.getFeed().getTacticalTime();
             float cooldown = empty ? reload.getCooldown().getEmptyTime() : reload.getCooldown().getTacticalTime();
-            return Math.max(1L, (long) ((feed + cooldown) * 1000.0F));
+            // TaCZ evaluates feed and cooldown as elapsed-time checkpoints
+            // from the same reload start timestamp, not sequential durations.
+            return Math.max(1L, (long) (Math.max(feed, cooldown) * 1000.0F));
         }).orElse(fallback);
         var profile = TetraItemStackProfileResolver.tryResolve(gun, stack,
                 com.pycoder.taczintetra.item.GunModuleSlots.BODY,
@@ -404,14 +400,10 @@ public final class ModularGunLifecycleAdapter {
     }
 
     private static void ensureGunId(ItemStack stack) {
-        if (isModular(stack)) {
-            stack.getOrCreateTag().putString("GunId", "taczintetra:modular_gun");
+        if (stack != null && stack.getItem() instanceof ModularGunItem gun) {
+            gun.setGunId(stack, gun.getGunId(stack));
+            gun.setGunDisplayId(stack, gun.getGunDisplayId(stack));
         }
-    }
-
-    /** TaCZ 已注册委托读取此原版 TaCZ 键，公开物品则使用自己的命名空间键。 */
-    private static void syncNativeAmmo(ModularGunItem gun, ItemStack stack) {
-        stack.getOrCreateTag().putInt("AmmoCount", Math.max(0, gun.getCurrentAmmoCount(stack)));
     }
 
     /** 直接调用 TaCZ 弹丸实现；物品包装器的可选脚本路径会跳过 Tetra 物品栈的 shootOnce。 */

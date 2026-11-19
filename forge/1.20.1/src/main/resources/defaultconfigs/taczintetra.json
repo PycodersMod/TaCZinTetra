@@ -24,7 +24,7 @@
     {"id":"40mm","name":"40mm榴弹","materials":["wood","stone","iron","gold","netherite"],"projectile_type":"tacz:40mm","stats":{"pellets_per_round":1,"damage":12.0,"velocity":2.0,"range":1.0,"armor_ignore":0.0,"pierce":0,"knockback":1.0,"min_rpm_multiplier":1.0,"max_rpm_multiplier":0.85,"min_inaccuracy_multiplier":1.0,"max_inaccuracy_multiplier":1.2,"life":1.5,"gravity":0.15,"friction":0.025,"explosion":2.0,"max_heat":100,"overheat_threshold":100,"heat_per_shot":8,"cooling_coefficient":1.5,"heat_epsilon":0.01}}
   ],
   "magazines": [{"id":"standard","name":"常规弹匣","materials":["wood","stone","iron","gold","netherite"],"feed_type":"magazine","stats":{"resource_base_capacity":15,"reload_time_multiplier":1.0}}],
-  "optics": [{"id":"optic","name":"倍镜","slot":"optic","stats":{"aiming_zoom":1.0}}],
+  "optics": [{"id":"optic","name":"倍镜","slot":"optic","stats":{"aiming_zoom":1.5}}],
   "stocks": [{"id":"stock","name":"枪托","slot":"stock","stats":{"recoil_multiplier":0.9}}],
   "grips": [{"id":"grip","name":"握把","slot":"grip","stats":{"handling_multiplier":1.05}}],
   "enchantments": [

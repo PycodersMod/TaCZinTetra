@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "taczintetra:physical_part/magazine",
+  "pattern": [
+    "PP",
+    "P "
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    }
+  },
+  "result": {
+    "item": "taczintetra:wood_magazine",
+    "count": 1
+  }
+}

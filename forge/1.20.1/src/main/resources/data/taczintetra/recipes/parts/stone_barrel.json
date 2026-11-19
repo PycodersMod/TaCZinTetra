@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "taczintetra:physical_part/barrel",
+  "pattern": [
+    "P",
+    "S",
+    "P"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:cobblestone"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "taczintetra:stone_barrel",
+    "count": 1
+  }
+}

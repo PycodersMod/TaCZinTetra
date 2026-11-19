@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "taczintetra:physical_part/magazine",
+  "pattern": [
+    "PP",
+    "PP"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:cobblestone"
+    }
+  },
+  "result": {
+    "item": "taczintetra:stone_magazine",
+    "count": 1
+  }
+}

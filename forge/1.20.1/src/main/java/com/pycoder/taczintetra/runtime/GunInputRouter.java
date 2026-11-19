@@ -4,10 +4,15 @@ package com.pycoder.taczintetra.runtime;
 public final class GunInputRouter {
     private GunInputRouter() { }
 
-    /** 副手模组枪械可以单独射击，除非主手枪械占用双手。 */
+    /** 仅双手各持一把单手模组枪时，右键才用于副手射击。 */
     public static boolean offhandShootAllowed(boolean mainGun, boolean offhandGun,
                                                boolean mainGunTwoHanded) {
-        return offhandGun && !mainGunTwoHanded;
+        return mainGun && offhandGun && !mainGunTwoHanded;
+    }
+
+    /** 普通主手换弹交给 TaCZ 原生 ReloadKey；仅副手和 Shift 补弹走自定义意图。 */
+    public static boolean shouldRouteReloadToCustomHandler(Decision decision) {
+        return decision != null && (decision.routeReloadToOffHand() || decision.fillReload());
     }
 
     public static boolean adsAllowed(boolean mainGun, boolean offHandPistol, boolean mainGunTwoHanded) {
@@ -23,7 +28,7 @@ public final class GunInputRouter {
         boolean offHandAction = state == GunInputState.DUAL_PISTOL && ctrl;
         boolean fill = shift;
         return new Decision(state, offHandAction, fill,
-                state == GunInputState.SINGLE_PISTOL || state == GunInputState.TWO_HANDED_GUN);
+                state != GunInputState.NO_GUN);
     }
 
     public record Decision(GunInputState state, boolean routeReloadToOffHand,

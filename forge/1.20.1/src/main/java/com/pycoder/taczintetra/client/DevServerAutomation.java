@@ -8,12 +8,14 @@ import com.pycoder.taczintetra.item.GunModuleSlots;
 import com.pycoder.taczintetra.item.ModularGunItem;
 import com.pycoder.taczintetra.registry.ModItems;
 import com.pycoder.taczintetra.logic.ResourceNbtAdapter;
+import com.pycoder.taczintetra.network.StackIdentity;
 import com.pycoder.taczintetra.api.AddonAdapterRegistry;
 import com.pycoder.taczintetra.api.ExternalCapabilityAdapter;
 import com.pycoder.taczintetra.api.ResourceChannelType;
 import com.pycoder.taczintetra.runtime.ResourceInsertionService;
 import com.pycoder.taczintetra.runtime.ExternalResourceService;
 import com.tacz.guns.entity.EntityKineticBullet;
+import com.tacz.guns.api.item.IAmmo;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
@@ -32,6 +34,8 @@ import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -48,6 +52,8 @@ import se.mickelus.tetra.blocks.workbench.WorkbenchTile;
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.UUID;
 import java.nio.file.Files;
@@ -57,12 +63,24 @@ import java.nio.file.Path;
 @Mod.EventBusSubscriber(modid = TaCZinTetra.MOD_ID)
 public final class DevServerAutomation {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final boolean BODY_VISUAL_PROBE = Boolean.getBoolean("taczintetra.dev_body_visual_probe");
+    private static final boolean HOLD_HOLO = Boolean.getBoolean("taczintetra.dev_hold_holo");
+    private static final boolean LAN_HOST = Boolean.getBoolean("taczintetra.dev_lan_host");
+    private static final boolean F06_ZERO_AMMO_PROBE = Boolean.getBoolean("taczintetra.dev_f06_zero_ammo_probe");
+    private static final boolean F06_RELOAD_INTERRUPT_PROBE = Boolean.getBoolean(
+            "taczintetra.dev_f06_reload_interrupt_probe");
+    private static final boolean NATIVE_RELOAD_KEY_PROBE = Boolean.getBoolean(
+            "taczintetra.dev_native_reload_key_probe");
+    private static final boolean DUAL_HAND_PROBE = Boolean.getBoolean("taczintetra.dev_dual_hand_probe");
+    private static final String LAN_HOST_USERNAME = System.getProperty("taczintetra.dev_lan_host_username", "");
     private static final String MODULES_READY = "taczintetra_dev_modules_ready";
     private static final String WORKBENCH_OPENED = "taczintetra_dev_workbench_opened_v24";
     private static final String WORKBENCH_OPEN_DELAY = "taczintetra_dev_workbench_open_delay_v1";
     private static final String WORKBENCH_CRAFTED = "taczintetra_dev_workbench_crafted_v24";
     private static final String WORKBENCH_GUI_PENDING = "taczintetra_dev_workbench_gui_pending_v1";
     private static final String WORKBENCH_GUI_OBSERVED = "taczintetra_dev_workbench_gui_observed_v1";
+    private static final String WORKBENCH_GUI_BEFORE_MODULE = "taczintetra_dev_workbench_gui_before_module_v1";
+    private static final String WORKBENCH_GUI_BEFORE_MATERIAL = "taczintetra_dev_workbench_gui_before_material_v1";
     private static final String HEAT_PROBE_STATE = "taczintetra_dev_heat_probe_v14";
     private static final String HEAT_PROBE_START = "taczintetra_dev_heat_probe_start_v14";
     private static final String ENCHANTMENT_PROBE = "taczintetra_dev_enchantment_probe_v15";
@@ -186,10 +204,11 @@ public final class DevServerAutomation {
         if (!Boolean.getBoolean("taczintetra.dev_automation") || event.getEntity().level().isClientSide()) {
             return;
         }
+        if (!(event.getSource().getDirectEntity() instanceof EntityKineticBullet bullet)) return;
         var target = event.getEntity();
         if (target.getTags().contains("taczintetra_dev_damage_target")) {
-            LOGGER.info("TaCZinTetra dev projectile hit target: target={}, healthBefore={}, incomingDamage={}, source={}",
-                    target.getUUID(), target.getHealth(), event.getAmount(), event.getSource().getMsgId());
+            LOGGER.info("TaCZinTetra dev projectile hit target: target={}, bullet={}, healthBefore={}, incomingDamage={}, source={}",
+                    target.getUUID(), bullet.getUUID(), target.getHealth(), event.getAmount(), event.getSource().getMsgId());
         }
     }
 
@@ -198,10 +217,19 @@ public final class DevServerAutomation {
         if (!Boolean.getBoolean("taczintetra.dev_automation") || event.getEntity().level().isClientSide()) {
             return;
         }
+        if (!(event.getSource().getDirectEntity() instanceof EntityKineticBullet bullet)) return;
         var target = event.getEntity();
         if (target.getTags().contains("taczintetra_dev_damage_target")) {
-            LOGGER.info("TaCZinTetra dev projectile damage event: target={}, healthObserved={}, damageApplied={}, source={}",
-                    target.getUUID(), target.getHealth(), event.getAmount(), event.getSource().getMsgId());
+            LOGGER.info("TaCZinTetra dev projectile damage event: target={}, bullet={}, healthObserved={}, damageApplied={}, source={}",
+                    target.getUUID(), bullet.getUUID(), target.getHealth(), event.getAmount(), event.getSource().getMsgId());
+        }
+        if (bullet.getOwner() instanceof ServerPlayer shooter
+                && DevProjectileHitAssertion.passesCrossPlayerHit(LAN_HOST,
+                shooter.getGameProfile().getName(), LAN_HOST_USERNAME,
+                shooter.getUUID(), bullet.getOwner().getUUID(), DEV_DAMAGE_TARGETS.get(shooter), target.getUUID(),
+                target.getTags().contains("taczintetra_dev_damage_target"), event.getAmount())) {
+            LOGGER.info("TaCZinTetra dev multiplayer target-hit assertion PASS: shooter={}, host={}, target={}, bullet={}, damageApplied={}",
+                    shooter.getGameProfile().getName(), LAN_HOST_USERNAME, target.getUUID(), bullet.getUUID(), event.getAmount());
         }
     }
 
@@ -217,6 +245,7 @@ public final class DevServerAutomation {
             advancePendingBackpackClientProbe(serverPlayer);
             restorePendingBackpackProbe(serverPlayer);
         }
+        if (HOLD_HOLO) return;
         observeDevConfigChange(player);
         probeConfiguredStarterRecipe(player);
         resetStaleProbeState(player);
@@ -254,27 +283,37 @@ public final class DevServerAutomation {
             devProfileProbeStack = stack.copy();
         }
         if (stack.getOrCreateTag().getBoolean(MODULES_READY) && existingProfile != null) {
+            if (BODY_VISUAL_PROBE) {
+                if (player instanceof ServerPlayer) {
+                    player.getInventory().setChanged();
+                    player.inventoryMenu.broadcastChanges();
+                    player.containerMenu.broadcastChanges();
+                }
+                return;
+            }
+            if (F06_RELOAD_INTERRUPT_PROBE || NATIVE_RELOAD_KEY_PROBE) return;
             probeSpecialInlays(player, stack);
             ensureDamageProbeTarget(player);
-            // 客户端命令可能先更新主手，副手的原版物品栏数据包稍后才到达。
-            // 为保持开发探针的两组物品栈确定一致，
-            // 在模块组装完成后，将已准备好的主手物品栈同步到服务端副手。
-
-            int syncTicks = OFFHAND_SYNC_TICKS.getOrDefault(player, 0);
-            if (syncTicks < 100) {
-                ItemStack offhand = stack.copy();
-                offhand.getOrCreateTag().putFloat("taczintetra_heat", 0.0f);
-                offhand.getOrCreateTag().putBoolean("taczintetra_overheat", false);
-                offhand.getOrCreateTag().putLong("taczintetra_heat_tick", player.level().getGameTime());
-                player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, offhand);
-                player.inventoryMenu.broadcastChanges();
-                player.containerMenu.broadcastChanges();
-                OFFHAND_SYNC_TICKS.put(player, syncTicks + 1);
-                if (syncTicks == 0) {
-                    LOGGER.info("TaCZinTetra dev automation broadcasting off-hand stack for dual-hand probe: item={}",
-                            player.getOffhandItem().getItem());
+            // 只有显式双持诊断探针才能镜像测试枪到副手；普通玩法和开发流程
+            // 必须保留玩家真实副手物品，避免把单持武器误变成双持。
+            if (DUAL_HAND_PROBE) {
+                int syncTicks = OFFHAND_SYNC_TICKS.getOrDefault(player, 0);
+                if (syncTicks < 1) {
+                    ItemStack offhand = stack.copy();
+                    StackIdentity.ensureUniqueId(offhand);
+                    offhand.getOrCreateTag().putFloat("taczintetra_heat", 0.0f);
+                    offhand.getOrCreateTag().putBoolean("taczintetra_overheat", false);
+                    offhand.getOrCreateTag().putLong("taczintetra_heat_tick", player.level().getGameTime());
+                    player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, offhand);
+                    player.inventoryMenu.broadcastChanges();
+                    player.containerMenu.broadcastChanges();
+                    OFFHAND_SYNC_TICKS.put(player, syncTicks + 1);
+                    LOGGER.info("TaCZinTetra dev automation broadcasting off-hand stack for dual-hand probe: item={}, identity={}, hasUniqueId={}",
+                            player.getOffhandItem().getItem(), StackIdentity.of(player.getOffhandItem()),
+                            StackIdentity.hasUniqueId(player.getOffhandItem()));
                 }
             }
+            if (DUAL_HAND_PROBE) return;
             if (player instanceof ServerPlayer serverPlayer) {
                 // 通用容器流程不依赖 Tetra 工作台探针；
                 // 即使工作台探针跳过或变更，也不能影响此契约测试。
@@ -292,9 +331,14 @@ public final class DevServerAutomation {
             return;
         }
         boolean shotgunProbe = player.getTags().contains("taczintetra_dev_shotgun");
-        String bodyId = shotgunProbe ? "taczintetra/body/shotgun" : "taczintetra/body/pistol";
-        String barrelId = shotgunProbe ? "taczintetra/barrel/12g" : "taczintetra/barrel/9mm";
-        String ammoId = shotgunProbe ? "tacz:12g" : "tacz:9mm";
+        DevBodyVisualProbeProfile visualProfile = DevBodyVisualProbeProfile.supportedFamilies().stream()
+                .filter(family -> player.getTags().contains("taczintetra_dev_body_visual_" + family))
+                .findFirst()
+                .map(DevBodyVisualProbeProfile::forFamily)
+                .orElseGet(() -> DevBodyVisualProbeProfile.forFamily(shotgunProbe ? "shotgun" : "pistol"));
+        String bodyId = visualProfile.bodyModuleId();
+        String barrelId = visualProfile.barrelModuleId();
+        String ammoId = visualProfile.ammoId();
         se.mickelus.tetra.items.modular.IModularItem.putModuleInSlot(
                 stack, GunModuleSlots.BODY, bodyId, "taczintetra/wood/");
         se.mickelus.tetra.items.modular.IModularItem.putModuleInSlot(
@@ -312,28 +356,69 @@ public final class DevServerAutomation {
         // N/M 探针会替换先前的初始物品栈，因此要等最终物品栈组装完成后
         // 再执行数据驱动的弹道探针。
         SpecialInlayPolicy.write(stack.getOrCreateTag(), java.util.List.of("armor_piercer"));
-        seedProbeAmmo(stack, ammoId);
+        seedProbeAmmo(gun, stack, ammoId);
         stack.getOrCreateTag().putBoolean(MODULES_READY, true);
         player.removeTag("taczintetra_dev_shotgun");
+        player.removeTag("taczintetra_dev_body_visual_" + visualProfile.family());
         var profile = TetraItemStackProfileResolver.tryResolve(gun, stack,
                 GunModuleSlots.BODY, GunModuleSlots.BARREL, GunModuleSlots.MAGAZINE);
         LOGGER.info("TaCZinTetra dev module structure: {}", describeModules(gun, stack));
-        LOGGER.info("TaCZinTetra dev automation installed Tetra modules: body={}, barrel={}, magazine={}, attachments={}, minorModules={}, specialModule={}, maxDamage={}, profile={}",
+        LOGGER.info("TaCZinTetra dev automation installed Tetra modules: family={}, body={}, barrel={}, ammo={}, magazine={}, attachments={}, minorModules={}, specialModule={}, maxDamage={}, profile={}",
+                visualProfile.family(),
                 stack.getOrCreateTag().contains(GunModuleSlots.BODY),
                 stack.getOrCreateTag().contains(GunModuleSlots.BARREL),
+                ammoId,
                 stack.getOrCreateTag().contains(GunModuleSlots.MAGAZINE),
                 stack.getOrCreateTag().contains(GunModuleSlots.STOCK),
                 gun.getNumMinorModules(stack),
                 gun.getModuleFromSlot(stack, GunModuleSlots.SPECIAL) != null,
                 gun.getMaxDamage(stack),
                 profile);
-        if (!player.getPersistentData().getBoolean("taczintetra_dev_offhand_seeded_v2")) {
+        if (BODY_VISUAL_PROBE) {
+            if (player instanceof ServerPlayer) {
+                player.getInventory().setChanged();
+                player.inventoryMenu.broadcastChanges();
+                player.containerMenu.broadcastChanges();
+            }
+            return;
+        }
+        if (F06_RELOAD_INTERRUPT_PROBE || NATIVE_RELOAD_KEY_PROBE) return;
+        if (DUAL_HAND_PROBE
+                && !player.getPersistentData().getBoolean("taczintetra_dev_offhand_seeded_v2")) {
             player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, stack.copy());
             player.getPersistentData().putBoolean("taczintetra_dev_offhand_seeded_v2", true);
             LOGGER.info("TaCZinTetra dev automation seeded off-hand stack for dual-hand probe: item={}",
                     player.getOffhandItem().getItem());
         }
+        if (DUAL_HAND_PROBE) return;
         openWorkbenchForRuntimeVerification(player);
+    }
+
+    /** 清理开发弹道探针前方最多 3 米的非方块实体阻挡，并保留方块实体。 */
+    private static void clearDamageProbeFiringLane(ServerPlayer player, Vec3 end) {
+        var level = player.serverLevel();
+        Vec3 direction = player.getLookAngle().normalize();
+        Vec3 start = player.getEyePosition().add(direction.scale(0.35));
+        double length = start.distanceTo(end);
+        if (length > 3.0) {
+            LOGGER.warn("TaCZinTetra dev firing-lane preparation refused unexpected length: {}", length);
+            return;
+        }
+        Set<BlockPos> visited = new HashSet<>();
+        for (double distance = 0.0; distance <= length; distance += 0.2) {
+            BlockPos position = BlockPos.containing(start.add(direction.scale(distance)));
+            if (!visited.add(position)) continue;
+            var state = level.getBlockState(position);
+            if (state.isAir()) continue;
+            if (level.getBlockEntity(position) != null) {
+                LOGGER.warn("TaCZinTetra dev firing lane blocked by protected block entity: position={}, block={}",
+                        position, BuiltInRegistries.BLOCK.getKey(state.getBlock()));
+                continue;
+            }
+            ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+            LOGGER.info("TaCZinTetra dev cleared firing-lane block: position={}, block={}", position, blockId);
+            level.setBlockAndUpdate(position, Blocks.AIR.defaultBlockState());
+        }
     }
 
     /** 为开发伤害冒烟测试创建一个确定性的生物目标。 */
@@ -359,15 +444,15 @@ public final class DevServerAutomation {
         var target = net.minecraft.world.entity.EntityType.ZOMBIE.create(level);
         if (target == null) return;
         var look = serverPlayer.getLookAngle().normalize();
-        // 将傀儡身体放在瞄准射线上。旧的“脚部与视线同高”摆放方式，
-        // 会让整个碰撞箱高于开发冒烟测试中的向下弹道弧线。
-        // 让悬空的开发目标保持在地面上方；否则审计世界会产生与弹丸样本无关的
-        // 撞墙伤害事件。
-        target.setPos(serverPlayer.getEyePosition().add(look.scale(1.5)));
+        // 将碰撞箱中心对准玩家视线。实体坐标表示脚部；如果直接把脚部放在
+        // 枪口线上，弹丸可能从碰撞箱下缘擦过，导致实机探针没有目标命中。
+        var targetAim = serverPlayer.getEyePosition().add(look.scale(2.0));
+        clearDamageProbeFiringLane(serverPlayer, targetAim);
+        target.setPos(targetAim.x, targetAim.y - target.getBbHeight() / 2.0, targetAim.z);
         target.setNoAi(true);
         target.setNoGravity(true);
         target.setSilent(true);
-        target.noPhysics = true;
+        target.noPhysics = false;
         // 仅供开发使用的护甲对比目标。此前未穿护甲的傀儡基准
         // 记录在 task.md 中；本次为傀儡装备整套钻石盔甲，
         // 以便在真实命中和伤害事件处理环节观察忽略护甲的行为。
@@ -435,16 +520,27 @@ public final class DevServerAutomation {
     }
 
     /** 将较大的探针 NBT 保留在服务端；客户端命令数据包上限为 256 个字符。 */
-    private static void seedProbeAmmo(ItemStack stack, String ammoId) {
+    private static void seedProbeAmmo(ModularGunItem gun, ItemStack stack, String ammoId) {
         var tag = stack.getOrCreateTag();
-        tag.putInt("taczintetra_ammo", 15);
+        int seededAmmo = F06_ZERO_AMMO_PROBE || F06_RELOAD_INTERRUPT_PROBE || NATIVE_RELOAD_KEY_PROBE ? 1 : 15;
         tag.putInt("taczintetra_max_ammo", 15);
-        tag.putInt("AmmoCount", 15);
+        if (NATIVE_RELOAD_KEY_PROBE) StackIdentity.ensureUniqueId(stack);
+        gun.setCurrentAmmoCount(stack, seededAmmo);
         var resources = new CompoundTag();
         var itemResources = new CompoundTag();
         itemResources.putInt(ammoId, 15);
         resources.put("taczintetra:item", itemResources);
         tag.put("resources", resources);
+        if (F06_ZERO_AMMO_PROBE) {
+            LOGGER.info("F06_ZERO_AMMO_SETUP ammo=1 maxAmmo=15 reserveResource=15");
+        } else if (F06_RELOAD_INTERRUPT_PROBE) {
+            StackIdentity.ensureUniqueId(stack);
+            tag.putBoolean("taczintetra_dev_f06_reload_probe_ready", true);
+            LOGGER.info("F06_RELOAD_INTERRUPT_AMMO_SETUP ammo=1 maxAmmo=15 reserveResource=15");
+        } else if (NATIVE_RELOAD_KEY_PROBE) {
+            LOGGER.info("NATIVE_RELOAD_KEY_AMMO_SETUP ammo=1 maxAmmo=15 reserveResource=15 identity={} stackUuid={}",
+                    StackIdentity.of(stack), tag.getUUID(StackIdentity.UNIQUE_ID));
+        }
     }
 
     /**
@@ -498,6 +594,8 @@ public final class DevServerAutomation {
         data.remove(WORKBENCH_CRAFTED);
         data.remove(WORKBENCH_GUI_PENDING);
         data.remove(WORKBENCH_GUI_OBSERVED);
+        data.remove(WORKBENCH_GUI_BEFORE_MODULE);
+        data.remove(WORKBENCH_GUI_BEFORE_MATERIAL);
         data.remove(HEAT_PROBE_STATE);
         data.remove(HEAT_PROBE_START);
         data.remove(ENCHANTMENT_PROBE);
@@ -602,13 +700,12 @@ public final class DevServerAutomation {
                 || !(sourceGun.getItem() instanceof ModularGunItem gun)) return;
         ResourceLocation ammoId = ResourceLocation.fromNamespaceAndPath("tacz", "9mm");
         ResourceLocation ammoItemId = ResourceLocation.fromNamespaceAndPath("tacz", "ammo");
-        ItemStack ammo = new ItemStack(BuiltInRegistries.ITEM.get(ammoItemId), 3);
+        ItemStack ammo = createProbeAmmo(ammoItemId, ammoId, 3);
         if (ammo.isEmpty()) {
-            LOGGER.warn("TaCZinTetra dev standard container insertion skipped: missing {}", ammoItemId);
+            LOGGER.warn("TaCZinTetra dev standard container insertion skipped: unavailable TaCZ ammo {}", ammoItemId);
             data.putBoolean(STANDARD_CONTAINER_PROBE, true);
             return;
         }
-        ammo.getOrCreateTag().putString("AmmoId", ammoId.toString());
         ItemStack targetGun = sourceGun.copy();
         ResourceNbtAdapter.write(targetGun.getOrCreateTag(), ResourceInsertionService.ITEM_CHANNEL,
                 ammoId.toString(), 0);
@@ -640,6 +737,14 @@ public final class DevServerAutomation {
         data.putBoolean(STANDARD_CONTAINER_PROBE, true);
     }
 
+    private static ItemStack createProbeAmmo(ResourceLocation ammoItemId, ResourceLocation ammoId, int count) {
+        ItemStack ammo = new ItemStack(BuiltInRegistries.ITEM.get(ammoItemId), count);
+        IAmmo taCZAmmo = IAmmo.getIAmmoOrNull(ammo);
+        if (taCZAmmo == null) return ItemStack.EMPTY;
+        taCZAmmo.setAmmoId(ammo, ammoId);
+        return ammo;
+    }
+
     /**
      * 测试真实玩家 InventoryMenu 流程，并在返回前恢复快捷栏与
      * 携带物品栈。此测试不针对附属模组容器。
@@ -650,13 +755,12 @@ public final class DevServerAutomation {
                 || !(sourceGun.getItem() instanceof ModularGunItem)) return;
         ResourceLocation ammoId = ResourceLocation.fromNamespaceAndPath("tacz", "9mm");
         ResourceLocation ammoItemId = ResourceLocation.fromNamespaceAndPath("tacz", "ammo");
-        ItemStack ammo = new ItemStack(BuiltInRegistries.ITEM.get(ammoItemId), 3);
+        ItemStack ammo = createProbeAmmo(ammoItemId, ammoId, 3);
         if (ammo.isEmpty()) {
-            LOGGER.warn("TaCZinTetra dev player inventory insertion skipped: missing {}", ammoItemId);
+            LOGGER.warn("TaCZinTetra dev player inventory insertion skipped: unavailable TaCZ ammo {}", ammoItemId);
             data.putBoolean(PLAYER_INVENTORY_PROBE, true);
             return;
         }
-        ammo.getOrCreateTag().putString("AmmoId", ammoId.toString());
         var inventory = player.getInventory();
         ItemStack originalHotbar = inventory.getItem(0).copy();
         ItemStack originalCarried = player.inventoryMenu.getCarried().copy();
@@ -700,9 +804,9 @@ public final class DevServerAutomation {
         }
         ResourceLocation ammoId = ResourceLocation.fromNamespaceAndPath("tacz", "9mm");
         ResourceLocation ammoItemId = ResourceLocation.fromNamespaceAndPath("tacz", "ammo");
-        ItemStack ammo = new ItemStack(BuiltInRegistries.ITEM.get(ammoItemId), 3);
+        ItemStack ammo = createProbeAmmo(ammoItemId, ammoId, 3);
         if (ammo.isEmpty()) {
-            LOGGER.warn("TaCZinTetra dev Sophisticated Backpacks insertion skipped: missing {}", ammoItemId);
+            LOGGER.warn("TaCZinTetra dev Sophisticated Backpacks insertion skipped: unavailable TaCZ ammo {}", ammoItemId);
             data.putBoolean(SOPHISTICATED_BACKPACK_PROBE, true);
             return;
         }
@@ -776,7 +880,6 @@ public final class DevServerAutomation {
                     pending.carriedStack);
             return;
         }
-        ammo.getOrCreateTag().putString("AmmoId", ammoId.toString());
         ItemStack targetGun = pending.sourceGun.copy();
         ResourceNbtAdapter.write(targetGun.getOrCreateTag(), ResourceInsertionService.ITEM_CHANNEL,
                 ammoId.toString(), 0);
@@ -865,51 +968,173 @@ public final class DevServerAutomation {
             LOGGER.warn("TaCZinTetra dev workbench verification skipped: tetra:basic_workbench is not registered");
             return;
         }
-        BlockPos position = player.blockPosition().relative(player.getDirection()).above();
+        BlockPos position = workbenchProbePosition(player);
         player.level().setBlockAndUpdate(position, workbench.defaultBlockState());
         LOGGER.info("TaCZinTetra dev workbench block placed: position={}, blockEntity={}",
                 position, player.level().getBlockEntity(position));
         if (player.level().getBlockEntity(position) instanceof MenuProvider provider
                 && player instanceof ServerPlayer serverPlayer) {
-            prepareWorkbenchGuiProbe((WorkbenchTile) provider, serverPlayer, player.getMainHandItem());
             // WorkbenchContainer 的 MenuType 工厂会从额外数据缓冲区读取方块位置；
             // 通用的 openMenu(provider) 流程会发送 null。
             NetworkHooks.openScreen(serverPlayer, provider, position);
+            boolean guiProbePrepared = prepareWorkbenchGuiProbe(
+                    (WorkbenchTile) provider, serverPlayer, player.getMainHandItem());
             player.getPersistentData().putBoolean(WORKBENCH_OPENED, true);
-            player.getPersistentData().putInt(WORKBENCH_GUI_PENDING, 80);
+            if (guiProbePrepared) {
+                player.getPersistentData().putInt(WORKBENCH_GUI_PENDING, 80);
+            } else {
+                player.getPersistentData().remove(WORKBENCH_GUI_PENDING);
+                LOGGER.warn("TaCZinTetra dev workbench GUI opened without assertion: probe inputs were not prepared");
+            }
             LOGGER.info("TaCZinTetra dev opened Tetra workbench menu at {}", position);
         } else {
             LOGGER.warn("TaCZinTetra dev workbench block entity was not created at {}", position);
         }
     }
 
-    private static void prepareWorkbenchGuiProbe(WorkbenchTile workbench, ServerPlayer player,
-                                                  ItemStack heldGun) {
-        if (!(heldGun.getItem() instanceof ModularGunItem)) return;
-        workbench.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(capability -> {
-            if (!(capability instanceof ItemStackHandler handler)) return;
-            ItemStack target = heldGun.copy();
-            ItemStack material = new ItemStack(BuiltInRegistries.ITEM.get(
-                    ResourceLocation.fromNamespaceAndPath(TaCZinTetra.MOD_ID, "iron_body")));
-            var schematic = SchematicRegistry.getSchematic("taczintetra/body_rifle");
-            if (schematic == null) {
-                LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: body_rifle schematic missing");
-                return;
+    private static boolean prepareWorkbenchGuiProbe(WorkbenchTile workbench, ServerPlayer player,
+                                                     ItemStack heldGun) {
+        if (!(heldGun.getItem() instanceof ModularGunItem gun)
+                || player.containerMenu == player.inventoryMenu
+                || !player.containerMenu.getCarried().isEmpty()) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: invalid gun, menu, or carried cursor stack");
+            return false;
+        }
+        var handler = workbench.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
+        if (!(handler instanceof ItemStackHandler itemHandler)) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: workbench item handler unavailable");
+            return false;
+        }
+        if (!clearWorkbenchSlotsThroughMenu(player, workbench)) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: saved inputs could not be returned safely");
+            return false;
+        }
+        ItemStack target = heldGun.copy();
+        ItemStack material = new ItemStack(BuiltInRegistries.ITEM.get(
+                ResourceLocation.fromNamespaceAndPath(TaCZinTetra.MOD_ID, "iron_body")));
+        var schematic = SchematicRegistry.getSchematic("taczintetra/body_rifle");
+        if (schematic == null) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: body_rifle schematic missing");
+            return false;
+        }
+
+        int targetInventoryIndex = findEmptyInventorySlot(player);
+        if (targetInventoryIndex < 0 || !player.getInventory().add(target.copy())
+                || !ItemStack.isSameItemSameTags(player.getInventory().getItem(targetInventoryIndex), target)) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: player inventory has no room for target gun");
+            return false;
+        }
+        int materialInventoryIndex = findEmptyInventorySlot(player);
+        if (materialInventoryIndex < 0 || !player.getInventory().add(material.copy())
+                || !ItemStack.isSameItemSameTags(player.getInventory().getItem(materialInventoryIndex), material)) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: player inventory has no room for physical part");
+            return false;
+        }
+
+        if (!moveInventoryStackToWorkbench(player, workbench, targetInventoryIndex, 0, "target gun")
+                || !moveInventoryStackToWorkbench(player, workbench, materialInventoryIndex, 1,
+                "configured physical part")) return false;
+        workbench.setCurrentSchematic(schematic, GunModuleSlots.BODY);
+        workbench.setChanged();
+
+        ItemStack preparedTarget = itemHandler.getStackInSlot(0).copy();
+        ItemStack preparedMaterial = itemHandler.getStackInSlot(1).copy();
+        var targetBodyBefore = gun.getModuleFromSlot(preparedTarget, GunModuleSlots.BODY);
+        if (targetBodyBefore == null || preparedMaterial.isEmpty()) {
+            LOGGER.warn("TaCZinTetra dev workbench GUI probe skipped: prepared target profile or material snapshot missing");
+            return false;
+        }
+        player.getPersistentData().putString(WORKBENCH_GUI_BEFORE_MODULE, targetBodyBefore.getKey());
+        player.getPersistentData().putInt(WORKBENCH_GUI_BEFORE_MATERIAL, preparedMaterial.getCount());
+        boolean canApply = schematic.canApplyUpgrade(player, preparedTarget,
+                new ItemStack[]{preparedMaterial.copy()}, GunModuleSlots.BODY, java.util.Map.of());
+        player.containerMenu.broadcastChanges();
+        LOGGER.info("TaCZinTetra dev workbench GUI probe prepared through player inventory and container clicks: schematic={}, target={}, material={}, canApply={}",
+                schematic.getKey(), preparedTarget, preparedMaterial, canApply);
+        return canApply;
+    }
+
+    private static boolean clearWorkbenchSlotsThroughMenu(ServerPlayer player, WorkbenchTile workbench) {
+        var handler = workbench.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
+        if (handler == null || player.containerMenu == player.inventoryMenu
+                || !player.containerMenu.getCarried().isEmpty()) {
+            LOGGER.warn("TaCZinTetra dev workbench saved-input cleanup unavailable: handler={}, workbenchMenu={}, cursorEmpty={}",
+                    handler != null, player.containerMenu != player.inventoryMenu,
+                    player.containerMenu.getCarried().isEmpty());
+            return false;
+        }
+
+        for (int workbenchSlot = 0; workbenchSlot < Math.min(4, handler.getSlots()); workbenchSlot++) {
+            ItemStack existing = handler.getStackInSlot(workbenchSlot).copy();
+            if (existing.isEmpty()) continue;
+            int inventoryIndex = findEmptyInventorySlot(player);
+            if (inventoryIndex < 0) {
+                LOGGER.warn("TaCZinTetra dev workbench saved item cannot be returned: no empty player inventory slot; workbenchSlot={}, item={}",
+                        workbenchSlot, existing);
+                return false;
             }
-            handler.setStackInSlot(0, target);
-            handler.setStackInSlot(1, material);
-            workbench.setCurrentSchematic(schematic, GunModuleSlots.BODY);
-            workbench.setChanged();
-            boolean canApply = schematic.canApplyUpgrade(player, target,
-                    new ItemStack[]{material.copy()}, GunModuleSlots.BODY, java.util.Map.of());
-            LOGGER.info("TaCZinTetra dev workbench GUI probe prepared: schematic={}, target={}, material={}, canApply={}",
-                    schematic.getKey(), target, material, canApply);
-        });
+
+            player.containerMenu.clicked(workbenchSlot, 0, ClickType.PICKUP, player);
+            if (!ItemStack.isSameItemSameTags(player.containerMenu.getCarried(), existing)
+                    || !handler.getStackInSlot(workbenchSlot).isEmpty()) {
+                LOGGER.warn("TaCZinTetra dev workbench saved item could not be picked up: slot={}, before={}, cursor={}, after={}",
+                        workbenchSlot, existing, player.containerMenu.getCarried(), handler.getStackInSlot(workbenchSlot));
+                return false;
+            }
+
+            int inventoryMenuSlot = TetraWorkbenchSlotLayout.playerInventoryMenuSlot(inventoryIndex);
+            player.containerMenu.clicked(inventoryMenuSlot, 0, ClickType.PICKUP, player);
+            if (!player.containerMenu.getCarried().isEmpty()
+                    || !ItemStack.isSameItemSameTags(player.getInventory().getItem(inventoryIndex), existing)) {
+                LOGGER.warn("TaCZinTetra dev workbench saved item could not be returned to player inventory: slot={}, inventoryIndex={}, cursor={}, inventoryStack={}",
+                        workbenchSlot, inventoryIndex, player.containerMenu.getCarried(),
+                        player.getInventory().getItem(inventoryIndex));
+                return false;
+            }
+            LOGGER.info("TaCZinTetra dev workbench saved input returned through menu: workbenchSlot={}, inventoryIndex={}, item={}",
+                    workbenchSlot, inventoryIndex, existing);
+        }
+        return true;
+    }
+
+    private static boolean moveInventoryStackToWorkbench(ServerPlayer player, WorkbenchTile workbench,
+                                                          int inventoryIndex, int workbenchSlot, String label) {
+        int inventoryMenuSlot = TetraWorkbenchSlotLayout.playerInventoryMenuSlot(inventoryIndex);
+        ItemStack expected = player.getInventory().getItem(inventoryIndex).copy();
+        clickWorkbenchMenuSlot(player, inventoryMenuSlot, "pick up " + label + " from player inventory");
+        if (!ItemStack.isSameItemSameTags(player.containerMenu.getCarried(), expected)) {
+            LOGGER.error("TaCZinTetra dev workbench transfer failed before target slot: label={}, inventoryIndex={}, cursor={}",
+                    label, inventoryIndex, player.containerMenu.getCarried());
+            return false;
+        }
+        clickWorkbenchMenuSlot(player, workbenchSlot, "place " + label + " in Tetra workbench");
+        ItemStack actual = workbench.getCapability(ForgeCapabilities.ITEM_HANDLER)
+                .map(handler -> handler.getStackInSlot(workbenchSlot).copy()).orElse(ItemStack.EMPTY);
+        boolean transferred = player.containerMenu.getCarried().isEmpty()
+                && ItemStack.isSameItemSameTags(actual, expected);
+        if (!transferred) {
+            LOGGER.error("TaCZinTetra dev workbench transfer failed after target slot: label={}, workbenchSlot={}, cursor={}, slotStack={}",
+                    label, workbenchSlot, player.containerMenu.getCarried(), actual);
+        }
+        return transferred;
+    }
+
+    private static int findEmptyInventorySlot(ServerPlayer player) {
+        return TetraWorkbenchSlotLayout.firstEmptyPlayerInventoryIndex(
+                player.getInventory().getContainerSize(),
+                index -> player.getInventory().getItem(index).isEmpty());
+    }
+
+    private static void clickWorkbenchMenuSlot(ServerPlayer player, int slot, String action) {
+        player.containerMenu.clicked(slot, 0, ClickType.PICKUP, player);
+        LOGGER.info("TaCZinTetra dev workbench menu action: action={}, slot={}, carried={}, slotStack={}",
+                action, slot, player.containerMenu.getCarried(),
+                player.containerMenu.isValidSlotIndex(slot) ? player.containerMenu.getSlot(slot).getItem() : "invalid");
     }
 
     private static void craftBodyThroughWorkbenchForRuntimeVerification(ServerPlayer player, ItemStack heldGun) {
         if (!(heldGun.getItem() instanceof ModularGunItem)) return;
-        BlockPos position = player.blockPosition().relative(player.getDirection()).above();
+        BlockPos position = workbenchProbePosition(player);
         if (player.level().getBlockEntity(position) instanceof WorkbenchTile workbench) {
             LOGGER.info("TaCZinTetra dev workbench GUI probe window elapsed; continuing full workbench regression");
             craftBodyThroughWorkbench(workbench, player, heldGun);
@@ -917,16 +1142,29 @@ public final class DevServerAutomation {
     }
 
     private static void observeWorkbenchGuiSettlement(ServerPlayer player, ItemStack heldGun) {
-        BlockPos position = player.blockPosition().relative(player.getDirection()).above();
+        BlockPos position = workbenchProbePosition(player);
         if (!(player.level().getBlockEntity(position) instanceof WorkbenchTile workbench)
                 || !(heldGun.getItem() instanceof ModularGunItem gun)) return;
         workbench.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(capability -> {
             if (!(capability instanceof ItemStackHandler handler)) return;
             ItemStack target = handler.getStackInSlot(0).copy();
             ItemStack remainingMaterial = handler.getStackInSlot(1).copy();
-            LOGGER.info("TaCZinTetra dev workbench GUI settlement observation: target={}, remainingMaterial={}, modules={}",
-                    target, remainingMaterial, describeModules(gun, target));
+            var targetBodyAfter = gun.getModuleFromSlot(target, GunModuleSlots.BODY);
+            String afterModule = targetBodyAfter == null ? "" : targetBodyAfter.getKey();
+            var result = WorkbenchGuiCraftAssertion.evaluate(
+                    player.getPersistentData().getString(WORKBENCH_GUI_BEFORE_MODULE), afterModule,
+                    "taczintetra/body/rifle",
+                    player.getPersistentData().getInt(WORKBENCH_GUI_BEFORE_MATERIAL), remainingMaterial.getCount());
+            LOGGER.info("TaCZinTetra dev workbench GUI craft assertion: result={}, reason={}, beforeModule={}, afterModule={}, materialCount={}->{}, target={}, modules={}",
+                    result.passed() ? "PASS" : "FAIL", result.reason(),
+                    player.getPersistentData().getString(WORKBENCH_GUI_BEFORE_MODULE), afterModule,
+                    player.getPersistentData().getInt(WORKBENCH_GUI_BEFORE_MATERIAL), remainingMaterial.getCount(),
+                    target, describeModules(gun, target));
         });
+    }
+
+    private static BlockPos workbenchProbePosition(net.minecraft.world.entity.player.Player player) {
+        return player.blockPosition().relative(player.getDirection().getClockWise()).above();
     }
 
     /**

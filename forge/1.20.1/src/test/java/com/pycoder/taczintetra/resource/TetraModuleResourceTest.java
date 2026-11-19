@@ -56,6 +56,35 @@ class TetraModuleResourceTest {
     }
 
     @Test
+    void modularGunUsesNativeTaczAimAnimationAndPistolOpticZoom() throws Exception {
+        var gun = JsonParser.parseString(Files.readString(Path.of(
+                "src/main/resources/assets/tacz/custom/taczintetra/data/taczintetra/data/guns/modular_gun_data.json")))
+                .getAsJsonObject();
+        var display = JsonParser.parseString(Files.readString(Path.of(
+                "src/main/resources/assets/tacz/custom/taczintetra/assets/tacz/display/guns/modular_gun_display.json")))
+                .getAsJsonObject();
+        var config = JsonParser.parseString(Files.readString(Path.of(
+                "src/main/resources/defaultconfigs/taczintetra.json"))).getAsJsonObject();
+
+        assertTrue(gun.get("aim_time").getAsDouble() > 0,
+                "TaCZ native aim transition must have a positive duration");
+        assertEquals(1.67, display.get("iron_zoom").getAsDouble(), 0.001,
+                "the M1911 rig should reuse TaCZ's native M1911 iron-sight zoom");
+        var optic = config.getAsJsonArray("optics").asList().stream()
+                .map(element -> element.getAsJsonObject())
+                .filter(element -> "optic".equals(element.get("id").getAsString()))
+                .findFirst().orElseThrow();
+        assertEquals(1.5, optic.getAsJsonObject("stats").get("aiming_zoom").getAsDouble(), 0.001,
+                "the Tetra pistol optic should reuse the TaCZ pistol sight zoom tier");
+
+        String itemSource = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"), StandardCharsets.UTF_8);
+        assertTrue(itemSource.contains("public float getAimingZoom(ItemStack stack)"));
+        assertTrue(itemSource.contains("profile.visual().aimingZoom()"),
+                "Tetra optic zoom must flow through TaCZ's native IGun API");
+    }
+
+    @Test
     void gunpackHasPackInfoInItsOwnNamespace() throws Exception {
         Path info = Path.of("src/main/resources/assets/tacz/custom/taczintetra/assets/taczintetra/gunpack_info.json");
         String json = Files.readString(info, StandardCharsets.UTF_8);
@@ -66,11 +95,17 @@ class TetraModuleResourceTest {
     @Test
     void starterPistolHasConfiguredCraftingRecipe() throws Exception {
         Path recipe = Path.of("src/main/resources/data/taczintetra/recipes/starter_pistol.json");
-        String json = Files.readString(recipe, StandardCharsets.UTF_8);
-        assertTrue(json.contains("minecraft:planks"));
-        assertTrue(json.contains("minecraft:wooden_slabs"));
-        assertTrue(json.contains("taczintetra:starter_pistol"));
-        assertTrue(json.contains("taczintetra:configured_shaped"));
+        var json = JsonParser.parseString(Files.readString(recipe, StandardCharsets.UTF_8)).getAsJsonObject();
+        var pattern = new java.util.ArrayList<String>();
+        json.getAsJsonArray("pattern").forEach(row -> pattern.add(row.getAsString()));
+
+        assertEquals("taczintetra:configured_shaped", json.get("type").getAsString());
+        assertEquals(java.util.List.of("PPP", "PS ", "L  "), pattern);
+        assertEquals("minecraft:planks", json.getAsJsonObject("key").getAsJsonObject("P").get("tag").getAsString());
+        assertEquals("minecraft:stick", json.getAsJsonObject("key").getAsJsonObject("S").get("item").getAsString());
+        assertEquals("minecraft:wooden_slabs", json.getAsJsonObject("key").getAsJsonObject("L").get("tag").getAsString());
+        assertEquals("taczintetra:starter_pistol", json.getAsJsonObject("result").get("item").getAsString());
+        assertEquals(1, json.getAsJsonObject("result").get("count").getAsInt());
     }
 
     @Test

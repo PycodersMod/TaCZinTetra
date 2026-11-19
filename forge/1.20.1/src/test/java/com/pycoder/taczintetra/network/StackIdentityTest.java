@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StackIdentityTest {
@@ -35,10 +36,16 @@ class StackIdentityTest {
     void runtimeStateDoesNotChangeTheIdentityHash() {
         CompoundTag first = new CompoundTag();
         first.putInt("taczintetra_ammo", 12);
+        first.putInt("GunCurrentAmmoCount", 12);
+        first.putInt("DummyAmmo", 6);
+        first.putString("GunFireMode", "SEMI");
         first.putString("GunId", "taczintetra:modular_gun");
         first.putString("taczintetra/body", "taczintetra/body/pistol");
         CompoundTag second = first.copy();
         second.putInt("taczintetra_ammo", 3);
+        second.putInt("GunCurrentAmmoCount", 3);
+        second.putInt("DummyAmmo", 2);
+        second.putString("GunFireMode", "BURST");
         second.putInt("Damage", 7);
         assertEquals(StackIdentity.canonicalTagHash(first), StackIdentity.canonicalTagHash(second));
     }
@@ -50,6 +57,7 @@ class StackIdentityTest {
         CompoundTag during = before.copy();
         during.putLong("taczintetra_reload_started_at", 123L);
         during.putString("taczintetra_reload_state", "TACTICAL_RELOAD_FEEDING");
+        during.putInt("taczintetra_reload_ammo_before", 0);
         assertEquals(StackIdentity.canonicalTagHash(before), StackIdentity.canonicalTagHash(during));
     }
 
@@ -76,5 +84,17 @@ class StackIdentityTest {
         assertTrue(identity.contains("randomUUID"));
         assertTrue(reload.contains("StackIdentity.ensureUniqueId(held)"));
         assertTrue(offhand.contains("StackIdentity.ensureUniqueId(offhand)"));
+    }
+
+    @Test
+    void fireModeIntentDoesNotChangeIdentityBeforeTheClientCanObserveTheStackSync() throws Exception {
+        String fireMode = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/network/FireModeIntentMessage.java"),
+                StandardCharsets.UTF_8);
+
+        assertFalse(fireMode.contains("StackIdentity.ensureUniqueId(stack)"),
+                "fire-mode handling must not invalidate an immediately following client stack fingerprint");
+        assertTrue(fireMode.contains("ModularGunLifecycleAdapter.fireSelect("),
+                "the fire-mode intent must delegate to TaCZ's native fire selection API on the authoritative server");
     }
 }

@@ -100,7 +100,7 @@ class ModularGunLifecycleContractTest {
         String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/compat/GunRuntimeEventHandler.java"), StandardCharsets.UTF_8);
         assertTrue(source.contains("EntityKineticBullet"));
         assertTrue(source.contains("EntityHurtByGunEvent.Pre"));
-        assertTrue(source.contains("LivingDeathEvent"));
+        assertTrue(source.contains("EntityKillByGunEvent"));
         assertTrue(source.contains("GunRuntimeEvent.Type.BULLET_HIT"));
         assertTrue(source.contains("GunRuntimeEvent.Type.BULLET_HEADSHOT"));
         assertTrue(source.contains("GunRuntimeEvent.Type.BULLET_KILL"));
@@ -124,11 +124,11 @@ class ModularGunLifecycleContractTest {
 
     @Test
     void explosionBridgeTargetsNativeExplosionFlag() throws Exception {
-        String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/mixin/EntityKineticBulletMixin.java"), StandardCharsets.UTF_8);
-        assertTrue(source.contains("@Mixin(value = EntityKineticBullet.class, remap = false)"));
-        assertTrue(source.contains("private boolean explosion"));
+        String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/compat/GunRuntimeEventHandler.java"), StandardCharsets.UTF_8);
+        assertTrue(source.contains("AmmoHitBlockEvent"));
+        assertTrue(source.contains("ConfiguredProjectilePolicy.explosionRadius"));
         assertTrue(source.contains("GunRuntimeEvent.Type.EXPLOSION_HIT"));
-        assertTrue(source.contains("ci.cancel()"));
+        assertTrue(source.contains("event.setCanceled(true)"));
     }
 
     @Test
@@ -164,13 +164,22 @@ class ModularGunLifecycleContractTest {
     }
 
     @Test
-    void configuredDamageIsThePerHitValueInsteadOfASecondNativeDistanceCurve() throws Exception {
-        String source = Files.readString(Path.of(
+    void configuredDamageUsesTaczNativeMultiplierWithoutReplacingDistanceDamageCurve() throws Exception {
+        String itemSource = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"),
+                StandardCharsets.UTF_8);
+        String mixinSource = Files.readString(Path.of(
                 "src/main/java/com/pycoder/taczintetra/mixin/EntityKineticBulletMixin.java"),
                 StandardCharsets.UTF_8);
-        assertTrue(source.contains("method = \"getDamage(Lnet/minecraft/world/phys/Vec3;)F\""));
-        assertTrue(source.contains("cancellable = true"));
-        assertTrue(source.contains("ci.setReturnValue((float) profile.projectile().damage())"));
+        String gameTests = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/gametest/TaCZinTetraGameTests.java"),
+                StandardCharsets.UTF_8);
+        assertFalse(itemSource.contains("GunProperties.DAMAGE.name()"),
+                "the Tetra item callback must preserve TaCZ's distance-tier damage input");
+        assertTrue(mixinSource.contains("setShotDamageMultiplier(configuredDamage / baseDamage)"));
+        assertTrue(gameTests.contains("nativeNearDamage * damageScale"),
+                "the real Forge GameTest must assert the native distance tier is scaled once");
+        assertFalse(mixinSource.contains("getDamage(Lnet/minecraft/world/phys/Vec3;)F"));
     }
 
     @Test
@@ -210,20 +219,25 @@ class ModularGunLifecycleContractTest {
     }
 
     @Test
-    void clientFireBridgeUsesTheFiringStackRecoilProfile() throws Exception {
-        String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/client/ModularGunRecoilHandler.java"), StandardCharsets.UTF_8);
-        assertTrue(source.contains("GunFireEvent"));
-        assertTrue(source.contains("profile.handling().recoilAdd()"));
-        assertTrue(source.contains("setXRot"));
+    void recoilUsesTaczNativeParameterizedCameraCurveForTheCurrentGunStack() throws Exception {
+        String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"), StandardCharsets.UTF_8);
+        String cache = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/runtime/GunCacheSynchronizer.java"), StandardCharsets.UTF_8);
+        Path legacyHandler = Path.of("src/main/java/com/pycoder/taczintetra/client/ModularGunRecoilHandler.java");
+        assertTrue(source.contains("modify_cached_property"));
+        assertTrue(source.contains("GunProperties.RECOIL.name()"));
+        assertTrue(source.contains("TaczNativeRecoilCacheAdapter.scale"));
+        assertTrue(cache.contains("AttachmentPropertyManager.postChangeEvent(entity, stack)"));
+        assertFalse(Files.exists(legacyHandler), "the custom direct camera-pitch recoil handler must be removed");
     }
 
     @Test
-    void hudOnlyUsesTheMainHandModularGun() throws Exception {
+    void resourceHudLeavesStandardMagazineAndFireModeDisplayToTacz() throws Exception {
         String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/client/ModularGunHudHandler.java"), StandardCharsets.UTF_8);
         assertTrue(source.contains("getMainHandItem()"));
         assertTrue(source.contains("instanceof ModularGunItem"));
-        assertTrue(source.contains("getCurrentAmmoCount"));
-        assertTrue(source.contains("getMaxDummyAmmoAmount"));
+        assertFalse(source.contains("String ammo = hand +"));
+        assertFalse(source.contains("String ammo = "));
+        assertTrue(source.contains("TaCZ's GunHudOverlay"));
         assertTrue(source.contains("ResourceInsertionService.ITEM_CHANNEL"));
     }
 
@@ -251,7 +265,9 @@ class ModularGunLifecycleContractTest {
         assertTrue(source.contains("cachePresent"));
         assertTrue(source.contains("ClientPlayerNetworkEvent.LoggingIn"));
         assertTrue(source.contains("item replace entity @p weapon.mainhand with taczintetra:starter_pistol"));
-        assertTrue(server.contains("taczintetra_ammo"));
+        assertTrue(server.contains("setCurrentAmmoCount(stack, seededAmmo)"),
+                "development ammo setup must use TaCZ's native per-stack ammo accessor");
+        assertFalse(server.contains("putInt(\"AmmoCount\""));
         assertTrue(server.contains("taczintetra_max_ammo"));
         assertTrue(source.contains("GunCurrentAmmoCount:12"));
         assertTrue(source.contains("DummyAmmo:12"));
@@ -410,10 +426,32 @@ class ModularGunLifecycleContractTest {
     }
 
     @Test
-    void modularGunUsesTheRegisteredTaCZDisplayCacheId() throws Exception {
+    void tetraModulesUseTaCZNativeRenderViewsWithoutEnablingTaCZRefitSlots() throws Exception {
+        String item = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"), StandardCharsets.UTF_8);
+        String display = Files.readString(Path.of(
+                "src/main/resources/assets/tacz/custom/taczintetra/data/taczintetra/data/guns/modular_gun_data.json"),
+                StandardCharsets.UTF_8);
+
+        assertTrue(item.contains("AttachmentItemBuilder.create()"));
+        assertTrue(item.contains("nativeAttachmentId(stack, type)"));
+        assertTrue(item.contains("getModuleFromSlot(stack, moduleSlot) == null"));
+        assertTrue(item.contains("case SCOPE -> GunModuleSlots.OPTIC;"));
+        assertTrue(item.contains("case MUZZLE -> GunModuleSlots.BARREL;"));
+        assertTrue(item.contains("case EXTENDED_MAG -> GunModuleSlots.MAGAZINE;"));
+        assertTrue(item.contains("case GRIP -> GunModuleSlots.GRIP;"));
+        assertTrue(item.contains("case STOCK -> GunModuleSlots.STOCK;"));
+        assertTrue(item.contains("allowAttachmentType(ItemStack stack, AttachmentType type) { return false; }"));
+        assertTrue(display.contains("\"allow_attachment_types\": []"));
+    }
+
+    @Test
+    void modularGunSelectsTaCZDisplayCacheIdFromItsTetraBody() throws Exception {
         String source = Files.readString(Path.of("src/main/java/com/pycoder/taczintetra/item/ModularGunItem.java"), StandardCharsets.UTF_8);
-        assertTrue(source.contains("getGunDisplayId(ItemStack stack) { return DISPLAY_ID; }"));
-        assertTrue(source.contains("ResourceLocation.fromNamespaceAndPath(\"tacz\", \"modular_gun_display\")"));
+        assertTrue(source.contains("getGunDisplayId(ItemStack stack)"));
+        assertTrue(source.contains("GunItemDataAccessor.super.setGunDisplayId(stack, id)"));
+        assertTrue(source.contains("TetraItemStackProfileResolver.selectedModules(this, stack"));
+        assertTrue(source.contains("GunBodyDisplayPolicy.displayIdForBody(bodyVariant)"));
     }
 
     @Test
@@ -550,48 +588,43 @@ class ModularGunLifecycleContractTest {
     }
 
     @Test
-    void offhandFireDoesNotOverwriteMainhandCameraRecoil() throws Exception {
-        String client = Files.readString(Path.of(
-                "src/main/java/com/pycoder/taczintetra/client/ModularGunRecoilHandler.java"), StandardCharsets.UTF_8);
-        assertTrue(client.contains("getOffhandItem() == event.getGunItemStack()"));
+    void offhandFiringStackRefreshesTaczNativeRecoilCacheBeforeShoot() throws Exception {
+        String source = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/compat/ModularGunLifecycleAdapter.java"), StandardCharsets.UTF_8);
+        assertTrue(source.contains("GunCacheSynchronizer.ensure(shooter, stack)"));
     }
 
     @Test
-    void modularReloadSeedsNativeStateBeforeDelegating() throws Exception {
+    void modularReloadUsesNativeStateAndDoesNotForceAcceptanceWhenTaCZRejects() throws Exception {
         String source = Files.readString(Path.of(
                 "src/main/java/com/pycoder/taczintetra/compat/ModularGunLifecycleAdapter.java"),
                 StandardCharsets.UTF_8);
         int state = source.indexOf("data.reloadStateType =");
         int timestamp = source.indexOf("data.reloadTimestamp = System.currentTimeMillis()", state);
         int delegate = source.indexOf("delegate().startReload(data, stack, shooter)", timestamp);
-        int fallbackState = source.indexOf("data.reloadStateType =", delegate);
-        int fallbackTimestamp = source.indexOf("data.reloadTimestamp = System.currentTimeMillis()", fallbackState);
         assertTrue(state >= 0);
         assertTrue(timestamp > state);
         assertTrue(delegate > timestamp);
-        assertTrue(fallbackState > delegate);
-        assertTrue(fallbackTimestamp > fallbackState);
+        assertFalse(source.substring(delegate).contains("accepted = true;"));
+        assertTrue(source.contains("new GunReloadEvent(shooter, stack"));
     }
 
     @Test
-    void modularReloadKeepsNativeAmmoShadowSynchronizedWithTitAuthority() throws Exception {
+    void modularReloadUsesNativeAmmoNbtWithoutAParallelShadowKey() throws Exception {
         String source = Files.readString(Path.of(
                 "src/main/java/com/pycoder/taczintetra/compat/ModularGunLifecycleAdapter.java"),
                 StandardCharsets.UTF_8);
         int start = source.indexOf("public static boolean startReload(");
         int startDelegate = source.indexOf("delegate().startReload(data, stack, shooter)", start);
-        int startSync = source.indexOf("syncNativeAmmo(gun, stack)", start);
         int tick = source.indexOf("public static ReloadState tickReload(");
-        int tickDelegate = source.indexOf("delegate().tickReload(data, stack, shooter)", tick);
-        int tickSync = source.indexOf("syncNativeAmmo(gun, stack)", tick);
         assertTrue(start >= 0);
-        assertTrue(startSync > start && startSync < startDelegate);
         assertTrue(tick >= 0);
-        assertTrue(tickSync > tick && tickSync < tickDelegate);
+        assertTrue(source.contains("getCurrentAmmoCount(stack)"));
+        assertFalse(source.contains("syncNativeAmmo"));
+        assertFalse(source.contains("putInt(\"AmmoCount\""));
+        int tickDelegate = source.indexOf("delegate().tickReload(data, stack, shooter)", tick);
         int settlement = source.indexOf("ReloadRuntimeSettlementService.settleIfComplete(gun, stack, shooter)", tick);
-        int terminalSync = source.indexOf("syncNativeAmmo(gun, stack)", settlement);
         assertTrue(settlement > tickDelegate);
-        assertTrue(terminalSync > settlement);
     }
 
     @Test

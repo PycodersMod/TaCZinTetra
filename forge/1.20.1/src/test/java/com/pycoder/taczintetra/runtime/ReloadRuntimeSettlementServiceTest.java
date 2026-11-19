@@ -56,4 +56,25 @@ class ReloadRuntimeSettlementServiceTest {
         assertTrue(interrupt >= 0 && delegate > interrupt && reset > delegate);
         assertTrue(adapter.indexOf("data.reloadTimestamp = -1L", reset) > reset);
     }
+
+    @Test
+    void settlementUsesAmmoSnapshotFromReloadStartInsteadOfTaczInterimMagazineWrite() throws Exception {
+        String service = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/runtime/ReloadRuntimeSettlementService.java"),
+                StandardCharsets.UTF_8);
+        String adapter = Files.readString(Path.of(
+                "src/main/java/com/pycoder/taczintetra/compat/ModularGunLifecycleAdapter.java"),
+                StandardCharsets.UTF_8);
+
+        assertTrue(service.contains("RELOAD_AMMO_BEFORE"));
+        assertTrue(service.contains("putInt(RELOAD_AMMO_BEFORE, Math.max(0, ammoBeforeReload))"));
+        assertTrue(service.contains("remove(RELOAD_AMMO_BEFORE)"));
+        assertTrue(adapter.contains("getInt(ReloadRuntimeSettlementService.RELOAD_AMMO_BEFORE)"));
+        assertTrue(adapter.contains("getCurrentAmmoCount(stack) : -1"));
+        assertTrue(adapter.contains("ammoBeforeReload);"));
+        int snapshot = adapter.indexOf("int ammoBeforeReload = isModular(stack)");
+        int nativeStart = adapter.indexOf("delegate().startReload(data, stack, shooter)");
+        assertTrue(snapshot >= 0 && nativeStart > snapshot,
+                "record the magazine before the TaCZ delegate can write its interim ammo state");
+    }
 }

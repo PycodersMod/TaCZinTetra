@@ -32,6 +32,7 @@ import com.pycoder.taczintetra.network.OffhandShootIntentMessage;
 import com.pycoder.taczintetra.network.ReloadIntentMessage;
 import com.pycoder.taczintetra.network.StackIdentity;
 import com.pycoder.taczintetra.network.ModNetwork;
+import com.pycoder.taczintetra.logic.NetworkTimestampPolicy;
 import org.slf4j.Logger;
 
 /**
@@ -44,12 +45,32 @@ public final class DevClientAutomation {
     private static final boolean ENABLED = Boolean.getBoolean("taczintetra.dev_automation");
     private static final boolean LAN_HOST = Boolean.getBoolean("taczintetra.dev_lan_host");
     private static final boolean HOLD_HOLO = Boolean.getBoolean("taczintetra.dev_hold_holo");
+    private static final boolean F06_ZERO_AMMO_PROBE = Boolean.getBoolean("taczintetra.dev_f06_zero_ammo_probe");
+    private static final boolean F06_RELOAD_INTERRUPT_PROBE = Boolean.getBoolean(
+            "taczintetra.dev_f06_reload_interrupt_probe");
+    private static final boolean NATIVE_RELOAD_KEY_PROBE = Boolean.getBoolean(
+            "taczintetra.dev_native_reload_key_probe");
     /** 此审计绝不能切换为 CZ75 等 TaCZ 原生枪械。 */
     private static final boolean RUN_NATIVE_TACZ_PROBE = false;
-    private static final boolean RUN_DUAL_HAND_PROBE = false;
-    private static final boolean RUN_NM_PROBE = false;
+    private static final boolean RUN_DUAL_HAND_PROBE = Boolean.getBoolean("taczintetra.dev_dual_hand_probe");
+    private static final boolean RUN_DUAL_HAND_SETUP_ONLY = Boolean.getBoolean(
+            "taczintetra.dev_dual_hand_setup_only");
+    private static final boolean RUN_DUAL_HAND_PROBE_WAIT_FOR_GUEST = Boolean.getBoolean(
+            "taczintetra.dev_dual_hand_probe_wait_for_guest");
+    private static final int DUAL_HAND_GUEST_JOIN_MAX_WAIT_TICKS = 600;
+    private static final boolean RUN_NM_PROBE = Boolean.getBoolean("taczintetra.dev_nm_probe");
+    private static final boolean RUN_BODY_VISUAL_PROBE = Boolean.getBoolean("taczintetra.dev_body_visual_probe");
+    private static final String BODY_VISUAL_FAMILY = System.getProperty("taczintetra.dev_body_visual_family", "pistol");
     private static int ticksUntilSetup;
     private static int shotsRemaining;
+    private static int drawWaitTicks;
+    private static int f06SuccessfulShots;
+    private static int f06DryFireAttempts;
+    private static int f06AssertionFailures;
+    private static boolean f06AmmoSyncPending;
+    private static int f06AmmoBeforeSync;
+    private static int f06AmmoSyncWaitTicks;
+    private static final int F06_AMMO_SYNC_MAX_WAIT_TICKS = 40;
     private static int ticksUntilShot;
     private static boolean active;
     private static boolean setupSent;
@@ -59,6 +80,7 @@ public final class DevClientAutomation {
     private static int holoProbeDelay;
     private static boolean holoScreenshotSent;
     private static int holoScreenshotTicks;
+    private static boolean specialSchematicProbeActive;
     private static boolean holoClickSent;
     private static int holoClickDelay;
     private static boolean holoBoundsLogged;
@@ -67,20 +89,31 @@ public final class DevClientAutomation {
     private static UpgradeSchematic pendingHoloSchematic;
     private static int pendingHoloOpenTicks;
     private static boolean dualModeProbeSent;
+    private static boolean dualHandSetupOnlyLogged;
     private static boolean dualModeStateLogged;
     private static boolean offhandShootProbeSent;
     private static boolean offhandReloadProbeSent;
     private static int offhandReloadDelay;
+    private static int dualHandDrawWaitTicks;
+    private static boolean dualHandDrawCooldownObservedPositive;
+    private static int offhandReloadIdentityWaitTicks;
     private static boolean reloadProbeSent;
     private static int reloadInterruptTicks;
     private static int delayedReplayTicks;
     private static ReloadIntentMessage delayedReplayIntent;
     private static int ticksSinceDualSetup;
+    private static int dualHandGuestJoinWaitTicks;
+    private static boolean dualHandGuestJoinReady;
+    private static boolean dualHandGuestJoinTimedOut;
+    private static int dualHandSetupScreenshotTicks;
+    private static boolean dualHandSetupScreenshotSent;
     private static int ordinaryProbeStage;
     private static int ordinaryProbeTicks;
     private static boolean nmProbeSent;
     private static int nmProbeStage;
     private static int nmProbeTicks;
+    private static int bodyVisualProbeStage;
+    private static int bodyVisualProbeTicks;
     private static boolean modularCrosshairProbeSent;
     private static boolean workbenchScreenshotSent;
     private static int workbenchScreenshotTicks;
@@ -102,6 +135,13 @@ public final class DevClientAutomation {
         active = true;
         ticksUntilSetup = 30;
         shotsRemaining = 3;
+        drawWaitTicks = 0;
+        f06SuccessfulShots = 0;
+        f06DryFireAttempts = 0;
+        f06AssertionFailures = 0;
+        f06AmmoSyncPending = false;
+        f06AmmoBeforeSync = -1;
+        f06AmmoSyncWaitTicks = 0;
         ticksUntilShot = 0;
         setupSent = false;
         drawRequested = false;
@@ -110,6 +150,7 @@ public final class DevClientAutomation {
         holoProbeDelay = 40;
         holoScreenshotSent = false;
         holoScreenshotTicks = -1;
+        specialSchematicProbeActive = false;
         holoClickSent = false;
         holoClickDelay = -1;
         holoBoundsLogged = false;
@@ -122,16 +163,26 @@ public final class DevClientAutomation {
         offhandShootProbeSent = false;
         offhandReloadProbeSent = false;
         offhandReloadDelay = 0;
+        dualHandDrawWaitTicks = 0;
+        dualHandDrawCooldownObservedPositive = false;
+        offhandReloadIdentityWaitTicks = 0;
         reloadProbeSent = false;
         reloadInterruptTicks = -1;
         delayedReplayTicks = -1;
         delayedReplayIntent = null;
         ticksSinceDualSetup = 0;
+        dualHandGuestJoinWaitTicks = 0;
+        dualHandGuestJoinReady = false;
+        dualHandGuestJoinTimedOut = false;
+        dualHandSetupScreenshotTicks = -1;
+        dualHandSetupScreenshotSent = false;
         ordinaryProbeStage = 0;
         ordinaryProbeTicks = 0;
         nmProbeSent = false;
         nmProbeStage = 0;
         nmProbeTicks = 0;
+        bodyVisualProbeStage = 0;
+        bodyVisualProbeTicks = 0;
         modularCrosshairProbeSent = false;
         workbenchScreenshotSent = false;
         workbenchScreenshotTicks = -1;
@@ -174,18 +225,108 @@ public final class DevClientAutomation {
     private static void sendDualSetup(Minecraft minecraft) {
         if (setupSent || minecraft.player == null || minecraft.getConnection() == null) return;
         minecraft.getConnection().sendCommand("gamemode creative");
-        minecraft.getConnection().sendCommand("kill @e[type=!minecraft:player]");
+        minecraft.getConnection().sendCommand(
+                "kill @e[type=!minecraft:player,tag=!taczintetra_dev_damage_target]");
         minecraft.getConnection().sendCommand("give @p tacz:ammo_box 1");
         minecraft.getConnection().sendCommand("give @p taczintetra:special_inlay 1");
+        if (RUN_BODY_VISUAL_PROBE) {
+            DevBodyVisualProbeProfile profile = DevBodyVisualProbeProfile.forFamily(BODY_VISUAL_FAMILY);
+            minecraft.getConnection().sendCommand("tag @p add taczintetra_dev_body_visual_" + profile.family());
+            LOGGER.info("TaCZinTetra dev body visual probe requested family={}", profile.family());
+        }
         minecraft.getConnection().sendCommand("item replace entity @p weapon.mainhand with taczintetra:starter_pistol");
-        minecraft.getConnection().sendCommand("item replace entity @p weapon.offhand with air");
+        if (!RUN_DUAL_HAND_PROBE) {
+            minecraft.getConnection().sendCommand("item replace entity @p weapon.offhand with air");
+        }
         minecraft.getConnection().sendCommand("data get entity @p HandItems");
-        minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-        LOGGER.info("TaCZinTetra dev third-person dual-hand visual probe enabled");
+        if (RUN_BODY_VISUAL_PROBE) {
+            minecraft.options.setCameraType(CameraType.FIRST_PERSON);
+            LOGGER.info("TaCZinTetra dev body visual probe selected first-person view");
+        } else if (Boolean.getBoolean("taczintetra.heat_overlay_screenshot_probe")
+                || Boolean.getBoolean("taczintetra.dev_ads_screenshot_probe")) {
+            minecraft.options.setCameraType(CameraType.FIRST_PERSON);
+            LOGGER.info("TaCZinTetra dev first-person HUD/ADS screenshot probe enabled");
+        } else {
+            minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            LOGGER.info("TaCZinTetra dev third-person dual-hand visual probe enabled");
+        }
         setupSent = true;
         ticksSinceDualSetup = 0;
         ticksUntilShot = 40;
         LOGGER.info("TaCZinTetra dev dual-hand automation equipped both hands");
+    }
+
+    private static void advanceBodyVisualProbe(Minecraft minecraft) {
+        if (minecraft.screen != null) {
+            minecraft.setScreen(null);
+            return;
+        }
+        if (ticksUntilSetup > 0) {
+            ticksUntilSetup--;
+            return;
+        }
+        if (!setupSent) {
+            sendDualSetup(minecraft);
+            return;
+        }
+        ItemStack stack = minecraft.player.getMainHandItem();
+        boolean assembled = stack.getItem() instanceof com.pycoder.taczintetra.item.ModularGunItem
+                && stack.hasTag() && stack.getTag().getBoolean("taczintetra_dev_modules_ready");
+        if (!assembled) {
+            if (++bodyVisualProbeTicks == 1 || bodyVisualProbeTicks % 20 == 0) {
+                LOGGER.info("TaCZinTetra dev body visual probe waiting for authoritative module assembly: family={}, elapsedTicks={}/200, item={}, modulesReady={}",
+                        BODY_VISUAL_FAMILY, bodyVisualProbeTicks, stack.getItem(),
+                        stack.hasTag() && stack.getTag().getBoolean("taczintetra_dev_modules_ready"));
+            }
+            if (bodyVisualProbeTicks >= 200) {
+                bodyVisualProbeStage = 3;
+                LOGGER.error("BODY_VISUAL_PROBE_TIMEOUT family={} no authoritative assembled gun arrived",
+                        BODY_VISUAL_FAMILY);
+            }
+            return;
+        }
+        if (bodyVisualProbeStage == 0) {
+            ((IClientPlayerGunOperator) minecraft.player).draw(stack);
+            bodyVisualProbeStage = 1;
+            bodyVisualProbeTicks = 0;
+            LOGGER.info("TaCZinTetra dev body visual probe drew assembled family={} modules={}",
+                    BODY_VISUAL_FAMILY, stack.getTag());
+            return;
+        }
+        if (bodyVisualProbeStage == 1 && ++bodyVisualProbeTicks >= 25) {
+            String screenshotName = "taczintetra-body-visual-" + BODY_VISUAL_FAMILY;
+            Screenshot.grab(minecraft.gameDirectory, screenshotName, minecraft.getMainRenderTarget(),
+                    path -> LOGGER.info("BODY_VISUAL_PROBE_CAPTURED family={} screenshot={}",
+                            BODY_VISUAL_FAMILY, path));
+            bodyVisualProbeStage = 2;
+        }
+    }
+
+    private static boolean tryPassDualHandGuestGate(Minecraft minecraft) {
+        if (!LAN_HOST || !RUN_DUAL_HAND_PROBE || !RUN_DUAL_HAND_PROBE_WAIT_FOR_GUEST
+                || dualHandGuestJoinReady) return !dualHandGuestJoinTimedOut;
+        if (dualHandGuestJoinTimedOut || minecraft.getConnection() == null) return false;
+        int onlinePlayers = minecraft.getConnection().getOnlinePlayers().size();
+        DevF06GuestJoinGatePolicy.Outcome outcome = DevF06GuestJoinGatePolicy.evaluate(
+                onlinePlayers, ++dualHandGuestJoinWaitTicks, DUAL_HAND_GUEST_JOIN_MAX_WAIT_TICKS);
+        if (outcome == DevF06GuestJoinGatePolicy.Outcome.READY) {
+            dualHandGuestJoinReady = true;
+            LOGGER.info("TaCZinTetra dev dual-hand probe guest gate passed: onlinePlayers={}, elapsedTicks={}",
+                    onlinePlayers, dualHandGuestJoinWaitTicks);
+            return true;
+        }
+        if (outcome == DevF06GuestJoinGatePolicy.Outcome.TIMEOUT) {
+            dualHandGuestJoinTimedOut = true;
+            LOGGER.error("F06_DUAL_HAND_GUEST_JOIN_TIMEOUT probe setup was not sent: onlinePlayers={}, elapsedTicks={}",
+                    onlinePlayers, dualHandGuestJoinWaitTicks);
+            active = false;
+            return false;
+        }
+        if (dualHandGuestJoinWaitTicks == 1 || dualHandGuestJoinWaitTicks % 100 == 0) {
+            LOGGER.info("TaCZinTetra dev dual-hand probe waiting for LAN guest: onlinePlayers={}, elapsedTicks={}/{}",
+                    onlinePlayers, dualHandGuestJoinWaitTicks, DUAL_HAND_GUEST_JOIN_MAX_WAIT_TICKS);
+        }
+        return false;
     }
 
     private static void probeHolosphereCatalog() {
@@ -229,7 +370,70 @@ public final class DevClientAutomation {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.getConnection() == null) return;
 
-        if (!sophisticatedBackpackUseSent
+        // 手动输入测试夹具必须先于 Holo/Workbench/JEI 探针运行，
+        // 否则探针会主动打开 GUI，阻止真实按键到达客户端输入事件。
+        if (RUN_DUAL_HAND_SETUP_ONLY) {
+            if (ticksUntilSetup > 0) {
+                ticksUntilSetup--;
+                return;
+            }
+            if (!setupSent) {
+                sendDualSetup(minecraft);
+                return;
+            }
+            boolean mainGunReady = minecraft.player.getMainHandItem().getItem()
+                    instanceof com.pycoder.taczintetra.item.ModularGunItem;
+            boolean offhandGunReady = minecraft.player.getOffhandItem().getItem()
+                    instanceof com.pycoder.taczintetra.item.ModularGunItem;
+            if (mainGunReady && offhandGunReady) {
+                if (!dualHandSetupOnlyLogged) {
+                    dualHandSetupOnlyLogged = true;
+                    dualHandSetupScreenshotTicks = 20;
+                    LOGGER.info("DUAL_HAND_SETUP_ONLY_READY mainIdentity={} offhandIdentity={}",
+                            StackIdentity.of(minecraft.player.getMainHandItem()),
+                            StackIdentity.of(minecraft.player.getOffhandItem()));
+                } else if (!dualHandSetupScreenshotSent && dualHandSetupScreenshotTicks >= 0
+                        && minecraft.screen == null) {
+                    if (dualHandSetupScreenshotTicks > 0) {
+                        dualHandSetupScreenshotTicks--;
+                    } else {
+                        Screenshot.grab(minecraft.gameDirectory,
+                                "taczintetra-dual-hand-first-person-offhand-probe",
+                                minecraft.getMainRenderTarget(), ignored -> { });
+                        dualHandSetupScreenshotSent = true;
+                        LOGGER.info("TaCZinTetra dev dual-hand first-person off-hand screenshot captured");
+                    }
+                }
+            }
+            return;
+        }
+
+        if (NATIVE_RELOAD_KEY_PROBE) {
+            if (!setupSent) sendDualSetup(minecraft);
+            return;
+        }
+
+        if (RUN_BODY_VISUAL_PROBE) {
+            advanceBodyVisualProbe(minecraft);
+            return;
+        }
+
+        if (HOLD_HOLO && specialSchematicProbeActive) {
+            if (!holoScreenshotSent && holoScreenshotTicks >= 0 && minecraft.screen != null) {
+                if (holoScreenshotTicks > 0) {
+                    holoScreenshotTicks--;
+                } else {
+                    Screenshot.grab(minecraft.gameDirectory, "taczintetra-holosphere-special-slot-probe",
+                            minecraft.getMainRenderTarget(), ignored -> { });
+                    holoScreenshotSent = true;
+                    LOGGER.info("TaCZinTetra dev holosphere special-slot screenshot captured from client-tick fallback: screen={}",
+                            minecraft.screen.getClass().getName());
+                }
+            }
+            return;
+        }
+
+        if (!HOLD_HOLO && !sophisticatedBackpackUseSent
                 && minecraft.screen == null
                 && minecraft.player.getMainHandItem().is(BuiltInRegistries.ITEM.get(
                 ResourceLocation.fromNamespaceAndPath("sophisticatedbackpacks", "backpack")))) {
@@ -247,6 +451,7 @@ public final class DevClientAutomation {
             if (pendingHoloOpenTicks-- == 0) {
                 HoloGui.getInstance().openSchematic(pendingHoloModular, pendingHoloDisplayStack,
                         "taczintetra/special", pendingHoloSchematic, () -> { });
+                specialSchematicProbeActive = true;
                 holoScreenshotSent = false;
                 holoScreenshotTicks = 10;
                 holoClickDelay = 40;
@@ -261,8 +466,6 @@ public final class DevClientAutomation {
 
         // 专用 GUI 审计模式会在真实 HoloGui 激活后停止其余冒烟测试状态机，
         // 便于人工或按 PID 定向截取特殊蓝图，避免界面自动切换到工作台或 JEI。
-        if (HOLD_HOLO && minecraft.screen instanceof HoloGui) return;
-
         if (!workbenchScreenshotSent && workbenchScreenshotTicks >= 0
                 && minecraft.screen instanceof WorkbenchScreen) {
             if (workbenchScreenshotTicks-- == 0) {
@@ -346,6 +549,8 @@ public final class DevClientAutomation {
             lanPublished = true;
             LOGGER.info("TaCZinTetra dev LAN host published integrated server on port 25565");
         }
+        if (!tryPassDualHandGuestGate(minecraft)) return;
+        if (F06_RELOAD_INTERRUPT_PROBE) return;
         if (!RUN_DUAL_HAND_PROBE) {
             dualModeProbeSent = true;
             offhandShootProbeSent = true;
@@ -361,29 +566,74 @@ public final class DevClientAutomation {
                 }
                 return;
             }
-            if (ticksSinceDualSetup >= 20) {
-                int identity = StackIdentity.of(minecraft.player.getOffhandItem());
-                LOGGER.info("TaCZinTetra dev dual-hand state before intent: mainItem={}, offItem={}, offIdentity={}",
-                        minecraft.player.getMainHandItem().getItem(), minecraft.player.getOffhandItem().getItem(), identity);
-                ModNetwork.CHANNEL.sendToServer(new FireModeIntentMessage(true,
-                        identity, 1001));
-                dualModeProbeSent = true;
-                LOGGER.info("TaCZinTetra dev dual-hand automation sent off-hand fire-mode intent");
-                ModNetwork.CHANNEL.sendToServer(new OffhandShootIntentMessage(
-                        identity, 1002, 0L));
-                offhandShootProbeSent = true;
-                LOGGER.info("TaCZinTetra dev dual-hand automation sent off-hand shoot intent: identity={}", identity);
-                offhandReloadDelay = 10;
+            IClientPlayerGunOperator dualGunOperator = IClientPlayerGunOperator.fromLocalPlayer(minecraft.player);
+            if (!drawRequested) {
+                dualGunOperator.draw(minecraft.player.getMainHandItem());
+                drawRequested = true;
+                LOGGER.info("TaCZinTetra dev dual-hand automation requested TaCZ draw before off-hand probe");
+                return;
             }
+            IGunOperator dualGunServerOperator = IGunOperator.fromLivingEntity(minecraft.player);
+            long drawCooldown = dualGunServerOperator.getSynDrawCoolDown();
+            int elapsedDrawWaitTicks = ++dualHandDrawWaitTicks;
+            DevF06DrawCooldownPolicy.Result drawResult = DevF06DrawCooldownPolicy.evaluate(
+                    dualHandDrawCooldownObservedPositive, drawCooldown, elapsedDrawWaitTicks, 200);
+            dualHandDrawCooldownObservedPositive = drawResult.observedPositiveCooldown();
+            if (drawResult.outcome() == DevF06DrawCooldownPolicy.Outcome.WAITING_FOR_SERVER_DRAW
+                    || drawResult.outcome() == DevF06DrawCooldownPolicy.Outcome.WAITING_FOR_COOLDOWN) {
+                if (elapsedDrawWaitTicks == 1 || elapsedDrawWaitTicks % 20 == 0) {
+                    LOGGER.info("TaCZinTetra dev dual-hand automation waiting for TaCZ server draw cooldown: elapsedTicks={}/200, cooldownMs={}",
+                            elapsedDrawWaitTicks, drawCooldown);
+                }
+                return;
+            }
+            if (drawResult.outcome() == DevF06DrawCooldownPolicy.Outcome.TIMEOUT) {
+                LOGGER.error("F06_DUAL_HAND_DRAW_COOLDOWN_TIMEOUT off-hand probe was not sent: acknowledgedCooldown={}, cooldownMs={}, elapsedTicks={}",
+                        dualHandDrawCooldownObservedPositive, drawCooldown, dualHandDrawWaitTicks);
+                dualModeProbeSent = true;
+                offhandShootProbeSent = true;
+                offhandReloadProbeSent = true;
+                return;
+            }
+            if (drawResult.outcome() != DevF06DrawCooldownPolicy.Outcome.READY) return;
+            int identity = StackIdentity.of(minecraft.player.getOffhandItem());
+            long timestamp = NetworkTimestampPolicy.clientTimestamp(System.currentTimeMillis(),
+                    dualGunOperator.getDataHolder().clientBaseTimestamp);
+            LOGGER.info("TaCZinTetra dev dual-hand state before intent: mainItem={}, offItem={}, offIdentity={}, drawReady={}",
+                    minecraft.player.getMainHandItem().getItem(), minecraft.player.getOffhandItem().getItem(), identity,
+                    drawCooldown == 0L);
+            ModNetwork.CHANNEL.sendToServer(new FireModeIntentMessage(true,
+                    identity, 1001));
+            dualModeProbeSent = true;
+            LOGGER.info("TaCZinTetra dev dual-hand automation sent off-hand fire-mode intent");
+            ModNetwork.CHANNEL.sendToServer(new OffhandShootIntentMessage(
+                    identity, 1002, timestamp));
+            offhandShootProbeSent = true;
+            LOGGER.info("TaCZinTetra dev dual-hand automation sent off-hand shoot intent: identity={}", identity);
+            offhandReloadDelay = 10;
+            return;
         }
         if (RUN_DUAL_HAND_PROBE && offhandShootProbeSent && !offhandReloadProbeSent) {
             if (offhandReloadDelay > 0) {
                 offhandReloadDelay--;
+                return;
             } else {
                 ItemStack offhand = minecraft.player.getOffhandItem();
                 if (offhand.getItem() instanceof com.pycoder.taczintetra.item.ModularGunItem) {
+                    if (!StackIdentity.hasUniqueId(offhand)) {
+                        if (++offhandReloadIdentityWaitTicks == 1 || offhandReloadIdentityWaitTicks % 20 == 0) {
+                            LOGGER.info("TaCZinTetra dev dual-hand automation waiting for authoritative off-hand identity: elapsedTicks={}/100",
+                                    offhandReloadIdentityWaitTicks);
+                        }
+                        if (offhandReloadIdentityWaitTicks >= 100) {
+                            LOGGER.error("F06_OFFHAND_IDENTITY_SYNC_TIMEOUT reload intent was not sent");
+                            offhandReloadProbeSent = true;
+                        }
+                        return;
+                    }
                     int identity = StackIdentity.of(offhand);
-                    ReloadIntentMessage intent = new ReloadIntentMessage(true, false, identity, 2002);
+                    ReloadIntentMessage intent = new ReloadIntentMessage(true, false, identity,
+                            com.pycoder.taczintetra.runtime.ReloadSequence.next());
                     ModNetwork.CHANNEL.sendToServer(intent);
                     // 在真实连接上等待数个客户端 tick 后重放相同序列；
                     // 即使重复包延迟到达，服务端门禁
@@ -392,6 +642,7 @@ public final class DevClientAutomation {
                     delayedReplayTicks = 5;
                     offhandReloadProbeSent = true;
                     LOGGER.info("TaCZinTetra dev dual-hand automation sent off-hand fill reload intent after shoot settlement: identity={}", identity);
+                    return;
                 }
             }
         }
@@ -399,11 +650,52 @@ public final class DevClientAutomation {
             ItemStack offhand = minecraft.player.getOffhandItem();
             if (offhand.getItem() instanceof com.pycoder.taczintetra.item.ModularGunItem) {
                 int identity = StackIdentity.of(offhand);
+                  long timestamp = NetworkTimestampPolicy.clientTimestamp(System.currentTimeMillis(),
+                          IClientPlayerGunOperator.fromLocalPlayer(minecraft.player)
+                                  .getDataHolder().clientBaseTimestamp);
                 ModNetwork.CHANNEL.sendToServer(new OffhandShootIntentMessage(
-                        identity, 1002, 0L));
+                        identity, 1002, timestamp));
                 offhandShootProbeSent = true;
                 LOGGER.info("TaCZinTetra dev dual-hand automation sent off-hand shoot intent: identity={}", identity);
             }
+        }
+        if (RUN_DUAL_HAND_PROBE) return;
+        if (F06_ZERO_AMMO_PROBE && f06AmmoSyncPending) {
+            int observedAmmo = modularAmmo(minecraft.player.getMainHandItem());
+            DevF06AmmoSyncObservationPolicy.Outcome outcome = DevF06AmmoSyncObservationPolicy.evaluate(
+                    f06AmmoBeforeSync, observedAmmo, f06AmmoSyncWaitTicks, F06_AMMO_SYNC_MAX_WAIT_TICKS);
+            if (outcome == DevF06AmmoSyncObservationPolicy.Outcome.WAITING) {
+                f06AmmoSyncWaitTicks++;
+                if (f06AmmoSyncWaitTicks == 1 || f06AmmoSyncWaitTicks % 20 == 0) {
+                    LOGGER.info("F06_ZERO_AMMO_SYNC_WAIT ammo={}->{} elapsedTicks={}/{}",
+                            f06AmmoBeforeSync, observedAmmo, f06AmmoSyncWaitTicks,
+                            F06_AMMO_SYNC_MAX_WAIT_TICKS);
+                }
+                return;
+            }
+
+            f06AmmoSyncPending = false;
+            shotsRemaining--;
+            ticksUntilShot = 12;
+            if (outcome == DevF06AmmoSyncObservationPolicy.Outcome.CONFIRMED) {
+                f06SuccessfulShots++;
+            } else {
+                f06AssertionFailures++;
+            }
+            LOGGER.info("F06_ZERO_AMMO_ASSERTION {} attempt={} result=SUCCESS ammo={}->{} syncTicks={} outcome={}",
+                    outcome == DevF06AmmoSyncObservationPolicy.Outcome.CONFIRMED ? "PASS" : "FAIL",
+                    3 - shotsRemaining, f06AmmoBeforeSync, observedAmmo,
+                    f06AmmoSyncWaitTicks, outcome);
+            if (shotsRemaining == 0) {
+                boolean passed = f06SuccessfulShots == 1
+                        && f06DryFireAttempts == 2
+                        && f06AssertionFailures == 0
+                        && observedAmmo == 0;
+                LOGGER.info("F06_ZERO_AMMO_SUMMARY {} successfulShots={} dryFireAttempts={} failures={} finalAmmo={}",
+                        passed ? "PASS" : "FAIL", f06SuccessfulShots, f06DryFireAttempts,
+                        f06AssertionFailures, observedAmmo);
+            }
+            return;
         }
         if (ticksUntilShot > 0) {
             ticksUntilShot--;
@@ -471,6 +763,15 @@ public final class DevClientAutomation {
                     modularCrosshairProbeSent = true;
                     LOGGER.info("TaCZinTetra dev modular crosshair screenshot saved");
                 }
+                if (Boolean.getBoolean("taczintetra.dev_ads_screenshot_probe")) {
+                    Screenshot.grab(minecraft.gameDirectory, "taczintetra-ads-hipfire-baseline",
+                            minecraft.getMainRenderTarget(), ignored -> { });
+                    nmProbeStage = 0;
+                    actionProbeStage = 1;
+                    actionProbeTicks = 0;
+                    LOGGER.info("TaCZinTetra dev ADS un-aimed first-person baseline captured; native aim probe armed without firing");
+                    return;
+                }
                 int ammoBefore = modularAmmo(minecraft.player.getMainHandItem());
                 ShootResult nmResult = gunOperator.shoot();
                 LOGGER.info("TaCZinTetra dev N/M probe shoot result={}, ammo={}->{}, tag={}",
@@ -500,17 +801,64 @@ public final class DevClientAutomation {
                 return;
             }
             if (actionProbeStage == 1) {
+                if (Boolean.getBoolean("taczintetra.dev_ads_screenshot_probe")) {
+                    // TaCZ HOLD_TO_AIM synchronizes the native mapping every client tick.
+                    // Keep the mapping down so its own input handler does not cancel this API probe.
+                    com.tacz.guns.client.input.AimKey.AIM_KEY.setDown(true);
+                }
                 gunOperator.aim(true);
-                LOGGER.info("TaCZinTetra dev action probe aim=true, state={}", gunOperator.isAim());
+                float aimingZoom = ((com.tacz.guns.api.item.IGun) actionGun.getItem()).getAimingZoom(actionGun);
+                LOGGER.info("TaCZinTetra dev action probe aim=true, state={}, aimingZoom={}",
+                        gunOperator.isAim(), aimingZoom);
                 actionProbeStage = 2;
                 actionProbeTicks = 0;
                 return;
             }
-            if (actionProbeStage == 2 && actionProbeTicks >= 10) {
-                gunOperator.aim(false);
-                LOGGER.info("TaCZinTetra dev action probe aim=false, state={}", gunOperator.isAim());
-                actionProbeStage = 3;
-                actionProbeTicks = 0;
+            if (actionProbeStage == 2) {
+                // TaCZ synchronizes aim with its native input state on client ticks.
+                // Keep the API-driven probe active through the animation window.
+                if (Boolean.getBoolean("taczintetra.dev_ads_screenshot_probe")) {
+                    com.tacz.guns.client.input.AimKey.AIM_KEY.setDown(true);
+                }
+                gunOperator.aim(true);
+                if (actionProbeTicks >= 10) {
+                    if (Boolean.getBoolean("taczintetra.dev_ads_screenshot_probe") && gunOperator.isAim()) {
+                        boolean taczInputGate = com.tacz.guns.util.InputExtraCheck.isInGame();
+                        boolean mouseGrabbed = minecraft.mouseHandler.isMouseGrabbed();
+                        boolean windowActive = minecraft.isWindowActive();
+                        String screenName = minecraft.screen == null
+                                ? "none" : minecraft.screen.getClass().getName();
+                        LOGGER.info("TaCZinTetra dev ADS input state: inputGate={}, mouseGrabbed={}, windowActive={}, screen={}",
+                                taczInputGate, mouseGrabbed, windowActive, screenName);
+                        var nativeGun = (com.tacz.guns.api.item.IGun) actionGun.getItem();
+                        ResourceLocation gunId = nativeGun.getGunId(actionGun);
+                        var commonGunIndex = com.tacz.guns.api.TimelessAPI.getCommonGunIndex(gunId);
+                        String aimTime = commonGunIndex
+                                .map(index -> Float.toString(index.getGunData().getAimTime()))
+                                .orElse("missing");
+                        var aimData = gunOperator.getDataHolder();
+                        LOGGER.info("TaCZinTetra dev ADS native data: gunId={}, clientIndex={}, commonIndex={}, aimTime={}, clientAimingProgress={}, oldAimingProgress={}, drawTimestamp={}",
+                                gunId,
+                                com.tacz.guns.api.TimelessAPI.getClientGunIndex(gunId).isPresent(),
+                                commonGunIndex.isPresent(), aimTime,
+                                aimData.clientAimingProgress,
+                                com.tacz.guns.client.gameplay.LocalPlayerDataHolder.oldAimingProgress,
+                                aimData.clientDrawTimestamp);
+                        Screenshot.grab(minecraft.gameDirectory, "taczintetra-ads-aim-probe",
+                                minecraft.getMainRenderTarget(), ignored -> { });
+                        LOGGER.info("TaCZinTetra dev ADS screenshot captured after native aim transition: state={}, zoom={}, progress={}, ticks={}",
+                                gunOperator.isAim(),
+                                ((com.tacz.guns.api.item.IGun) actionGun.getItem()).getAimingZoom(actionGun),
+                                gunOperator.getClientAimingProgress(1.0f), actionProbeTicks);
+                    }
+                    if (Boolean.getBoolean("taczintetra.dev_ads_screenshot_probe")) {
+                        com.tacz.guns.client.input.AimKey.AIM_KEY.setDown(false);
+                    }
+                    gunOperator.aim(false);
+                    LOGGER.info("TaCZinTetra dev action probe aim=false, state={}", gunOperator.isAim());
+                    actionProbeStage = 3;
+                    actionProbeTicks = 0;
+                }
                 return;
             }
             if (actionProbeStage == 3 && actionProbeTicks >= 10) {
@@ -590,6 +938,7 @@ public final class DevClientAutomation {
         if (!drawRequested) {
             gunOperator.draw(minecraft.player.getMainHandItem());
             drawRequested = true;
+            drawWaitTicks = 0;
             ticksUntilShot = 20;
             LOGGER.info("TaCZinTetra dev client automation requested native draw");
             return;
@@ -597,20 +946,70 @@ public final class DevClientAutomation {
         int ammoBefore = modularAmmo(minecraft.player.getMainHandItem());
         ShootResult result = gunOperator.shoot();
         if (result == ShootResult.IS_DRAWING) {
-            // 继续探测，但不要消耗请求射击次数。
+            drawWaitTicks++;
+            if (DevDrawWaitPolicy.shouldLog(drawWaitTicks)) {
+                logNativeDrawProbeState(minecraft, minecraft.player.getMainHandItem(), drawWaitTicks);
+            }
+            if (DevDrawWaitPolicy.timedOut(drawWaitTicks)) {
+                LOGGER.error("DEV_DRAW_PROBE_TIMEOUT waitTicks={} maxWaitTicks={}; automation stopped",
+                        drawWaitTicks, DevDrawWaitPolicy.MAX_WAIT_TICKS);
+                active = false;
+                return;
+            }
+            // 继续等待 TaCZ 原生拔枪冷却，但保持开发探针的等待有界。
             ticksUntilShot = 2;
-            LOGGER.info("TaCZinTetra dev client automation shoot result={}, waiting for draw", result);
             return;
         }
-        shotsRemaining--;
+        drawWaitTicks = 0;
         ticksUntilShot = 12;
-        LOGGER.info("TaCZinTetra dev client automation shoot result={}, ammo={}->{}, remaining={}, tag={}",
-                result, ammoBefore, modularAmmo(minecraft.player.getMainHandItem()), shotsRemaining,
+        int ammoAfter = modularAmmo(minecraft.player.getMainHandItem());
+        if (F06_ZERO_AMMO_PROBE) {
+            if (ammoBefore > 0 && result == ShootResult.SUCCESS) {
+                f06AmmoSyncPending = true;
+                f06AmmoBeforeSync = ammoBefore;
+                f06AmmoSyncWaitTicks = 0;
+                LOGGER.info("F06_ZERO_AMMO_SYNC_PENDING attempt={} result=SUCCESS ammoBefore={} maxWaitTicks={}",
+                        4 - shotsRemaining, ammoBefore, F06_AMMO_SYNC_MAX_WAIT_TICKS);
+                return;
+            }
+            shotsRemaining--;
+            boolean shotAccepted = ammoBefore > 0
+                    && result == ShootResult.SUCCESS
+                    && ammoAfter == ammoBefore - 1;
+            boolean dryFireAccepted = ammoBefore == 0
+                    && result == ShootResult.NO_AMMO
+                    && ammoAfter == 0;
+            if (shotAccepted) {
+                f06SuccessfulShots++;
+            } else if (dryFireAccepted) {
+                f06DryFireAttempts++;
+            } else {
+                f06AssertionFailures++;
+            }
+            LOGGER.info("F06_ZERO_AMMO_ASSERTION {} attempt={} result={} ammo={}->{}",
+                    shotAccepted || dryFireAccepted ? "PASS" : "FAIL",
+                    3 - shotsRemaining, result, ammoBefore, ammoAfter);
+        } else {
+            shotsRemaining--;
+            LOGGER.info("TaCZinTetra dev client automation shoot result={}, ammo={}->{}, remaining={}, tag={}",
+                    result, ammoBefore, ammoAfter, shotsRemaining,
                 minecraft.player.getMainHandItem().getTag());
+        }
         if (shotsRemaining == 0) {
+            if (F06_ZERO_AMMO_PROBE) {
+                boolean passed = f06SuccessfulShots == 1
+                        && f06DryFireAttempts == 2
+                        && f06AssertionFailures == 0
+                        && ammoAfter == 0;
+                LOGGER.info("F06_ZERO_AMMO_SUMMARY {} successfulShots={} dryFireAttempts={} failures={} finalAmmo={}",
+                        passed ? "PASS" : "FAIL", f06SuccessfulShots, f06DryFireAttempts,
+                        f06AssertionFailures, ammoAfter);
+                return;
+            }
             if (!reloadProbeSent) {
                 ModNetwork.CHANNEL.sendToServer(new ReloadIntentMessage(false, false,
-                        StackIdentity.of(minecraft.player.getMainHandItem()), 2001));
+                        StackIdentity.of(minecraft.player.getMainHandItem()),
+                        com.pycoder.taczintetra.runtime.ReloadSequence.next()));
                 reloadProbeSent = true;
                 ticksUntilShot = 0;
                 reloadInterruptTicks = -1;
@@ -625,11 +1024,36 @@ public final class DevClientAutomation {
                 ? gun.getCurrentAmmoCount(stack) : -1;
     }
 
+    private static void logNativeDrawProbeState(Minecraft minecraft, ItemStack stack, int waitTicks) {
+        var clientOperator = IClientPlayerGunOperator.fromLocalPlayer(minecraft.player);
+        var nativeOperator = IGunOperator.fromLivingEntity(minecraft.player);
+        var nativeGun = com.tacz.guns.api.item.IGun.getIGunOrNull(stack);
+        ResourceLocation gunId = nativeGun == null ? null : nativeGun.getGunId(stack);
+        var commonIndex = gunId == null
+                ? java.util.Optional.<com.tacz.guns.resource.index.CommonGunIndex>empty()
+                : com.tacz.guns.api.TimelessAPI.getCommonGunIndex(gunId);
+        String drawTime = commonIndex
+                .map(index -> index.getGunData() == null
+                        ? "missing-data" : Float.toString(index.getGunData().getDrawTime()))
+                .orElse("missing-index");
+        LOGGER.warn("DEV_DRAW_PROBE_STATE waitTicks={} item={} isTaczGun={} gunId={} commonIndex={} drawTime={} drawTimestamp={} nativeDrawCooldown={} clientReadyToDraw={}",
+                waitTicks,
+                stack.isEmpty() ? "empty" : stack.getItem().getDescriptionId(),
+                nativeGun != null,
+                gunId == null ? "missing" : gunId,
+                commonIndex.isPresent(),
+                drawTime,
+                clientOperator.getDataHolder().clientDrawTimestamp,
+                nativeOperator.getSynDrawCoolDown(),
+                clientOperator.isReadyToDraw());
+    }
+
     @SubscribeEvent
     public static void onScreenRender(ScreenEvent.Render.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!ENABLED || holoScreenshotSent || holoScreenshotTicks < 0) return;
-        if (!(event.getScreen() instanceof HoloGui) || minecraft.screen != event.getScreen()) return;
+        if (minecraft.screen != event.getScreen()) return;
+        if (!(event.getScreen() instanceof HoloGui) && !specialSchematicProbeActive) return;
         if (holoScreenshotTicks > 0) {
             holoScreenshotTicks--;
             return;
@@ -656,7 +1080,7 @@ public final class DevClientAutomation {
 
     @SubscribeEvent
     public static void onStableHoloScreenRender(ScreenEvent.Render.Post event) {
-        if (!ENABLED || !holoScreenshotSent || holoClickSent || holoClickDelay < 0) return;
+        if (!ENABLED || HOLD_HOLO || !holoScreenshotSent || holoClickSent || holoClickDelay < 0) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (!(event.getScreen() instanceof HoloGui) || minecraft.screen != event.getScreen()) return;
         if (!holoBoundsLogged) {
@@ -689,7 +1113,7 @@ public final class DevClientAutomation {
         }
     }
 
-    private static boolean clickWorkbenchCraftButton(WorkbenchScreen screen) {
+    static boolean clickWorkbenchCraftButton(WorkbenchScreen screen) {
         try {
             var field = WorkbenchScreen.class.getDeclaredField("defaultGui");
             field.setAccessible(true);

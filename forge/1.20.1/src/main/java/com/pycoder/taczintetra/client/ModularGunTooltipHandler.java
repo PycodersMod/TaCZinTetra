@@ -29,7 +29,8 @@ public final class ModularGunTooltipHandler {
         if (tag == null) return;
         event.getToolTip().add(Component.literal("TaCZ NBT"));
         for (String key : MODULE_KEYS) addTagLine(event, tag, key);
-        addTagLine(event, tag, "taczintetra_ammo");
+        addTagLine(event, tag, "GunCurrentAmmoCount");
+        addTagLine(event, tag, "DummyAmmo");
         addTagLine(event, tag, "taczintetra_max_ammo");
         addTagLine(event, tag, "resources");
     }

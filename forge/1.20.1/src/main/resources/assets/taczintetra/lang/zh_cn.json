@@ -30,5 +30,12 @@
   "tetra.module.taczintetra/barrel/338.name": "枪管",
   "tetra.module.taczintetra/barrel/12g.name": "枪管",
   "tetra.module.taczintetra/barrel/40mm.name": "枪管",
-  "tetra.module.taczintetra/magazine/standard.name": "弹匣"
+  "tetra.module.taczintetra/magazine/standard.name": "弹匣",
+  "tetra.holo.craft.taczintetra": "枪械",
+  "tetra.slot.taczintetra/special": "特殊镶嵌",
+  "tetra.variant_category.taczintetra.label": "枪械部件",
+  "tetra/schematic/taczintetra/special_socket.name": "安装特殊镶嵌槽",
+  "tetra/schematic/taczintetra/special_socket.description": "为枪械安装兼容特殊镶嵌的插槽。",
+  "tetra/schematic/taczintetra/special_socket.description_details": "必须先安装特殊镶嵌槽，才能为枪械装配兼容的特殊镶嵌。",
+  "tetra/schematic/taczintetra/special_socket.slot1": "特殊镶嵌材料"
 }

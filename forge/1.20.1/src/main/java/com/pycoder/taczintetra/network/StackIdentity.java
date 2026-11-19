@@ -29,6 +29,11 @@ public final class StackIdentity {
         if (!tag.hasUUID(UNIQUE_ID)) tag.putUUID(UNIQUE_ID, UUID.randomUUID());
     }
 
+    public static boolean hasUniqueId(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && stack.getTag() != null
+                && stack.getTag().hasUUID(UNIQUE_ID);
+    }
+
     /**
      * 刻意排除运行时状态：服务端弹药、热量、耐久
      * 和 TaCZ 桥接标签都可能在客户端收到同步前发生变化。
@@ -44,6 +49,13 @@ public final class StackIdentity {
         canonical.remove("taczintetra_overheat");
         canonical.remove("taczintetra_heat_tick");
         canonical.remove("taczintetra_fire_mode");
+        canonical.remove("GunCurrentAmmoCount");
+        canonical.remove("DummyAmmo");
+        canonical.remove("MaxDummyAmmo");
+        canonical.remove("GunFireMode");
+        canonical.remove("HasBulletInBarrel");
+        canonical.remove("HeatAmount");
+        canonical.remove("OverHeated");
         canonical.remove("AmmoCount");
         canonical.remove("Damage");
         canonical.remove("GunId");
@@ -52,6 +64,7 @@ public final class StackIdentity {
         canonical.remove("taczintetra_reload_pending");
         canonical.remove("taczintetra_reload_started_at");
         canonical.remove("taczintetra_reload_state");
+        canonical.remove("taczintetra_reload_ammo_before");
         return canonical.hashCode();
     }
 
