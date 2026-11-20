@@ -32,6 +32,7 @@
 **/.skill-cache/
 **/.local/
 **/local-config/
+/forge/1.20.1/HANDOVER/private/
 .env
 .env.*
 local.properties
